@@ -28,19 +28,19 @@ timeVsLaserPower
 
 V_incident	(0 1 0);//(0 1 0);//NORMALISED IN CODE
 
-laserRadius 0.0005;
+//laserRadius 0.0005;
+laserRadius 0.000036;
 
 
-N_sub_divisions	2;
+//N_sub_divisions    6;
+N_sub_divisions	    2;
 
 
-wavelength	1.064e-6;
+wavelength	1.070e-6;
 e_num_density	5.83e29;
 //elec_resistivity	1.0e-6;
-
 
 Radius_Flavour	2.0;
 
 useLocalSearch    true;//false;
 
-//N_sub_divisions    6;
