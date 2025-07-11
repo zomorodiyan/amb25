@@ -37,3 +37,6 @@ do
 done
 
 echo "Reconstruction complete"
+
+rm -r processor*/
+touch case.foam
