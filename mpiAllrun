@@ -1,0 +1,39 @@
+#/bin/sh
+
+# Source tutorial run functions
+. $WM_PROJECT_DIR/bin/tools/RunFunctions
+
+echo "Copying 'initial' to 0"
+cp -r initial 0
+
+# Serial steps
+runApplication blockMesh
+runApplication setFields
+
+# Decompose domain
+runApplication decomposePar
+
+# Parallel run
+echo "Running laserbeamFoam"
+mpirun --oversubscribe -np 8 laserbeamFoam -parallel > log.laserbeamFoam
+
+# Loop through processor0 times and reconstruct only those with mesh changes (i.e., polyMesh exists);
+# OpenFOAM will automatically reconstruct field data for all intermediate times that use the same mesh.
+echo "Starting reconstruction"
+for timeDir in processor0/*/
+do
+    time=$(basename "$timeDir")
+
+    # Check if polyMesh exists in this time step
+    if [ -d "processor0/$time/polyMesh" ]; then
+        echo "Reconstructing mesh and fields at time = $time"
+
+        # Remove existing logs to ensure runApplication executes
+        rm -f log.reconstructParMesh log.reconstructPar
+
+        runApplication reconstructParMesh -time $time
+        runApplication reconstructPar -time $time
+    fi
+done
+
+echo "Reconstruction complete"
