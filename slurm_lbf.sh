@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH --mem=64G              # ajust
 #SBATCH -p general             # Partition (queue)
 #SBATCH -q public              # QoS
 #SBATCH -N 1                   # Number of nodes
