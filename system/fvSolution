@@ -26,8 +26,9 @@ solvers
 
         solver          smoothSolver;
         smoother        symGaussSeidel;
-        tolerance       1e-8;
-        relTol          0;
+        tolerance       1e-6;
+        relTol          0.01;
+        maxIter         100;
     }
 
     "pcorr.*"
@@ -42,22 +43,24 @@ solvers
     {
         solver          PCG;
         preconditioner  DIC;
-        tolerance       1e-07;
-        relTol          0.05;
+        tolerance       1e-06;
+        relTol          0.1;
+        maxIter         100;
     }
 
     p_rghFinal
     {
         $p_rgh;
-        relTol          0;
+        relTol          0.01;
     }
 
     U
     {
         solver          smoothSolver;
         smoother        symGaussSeidel;
-        tolerance       1e-06;
-        relTol          0;
+        tolerance       1e-05;
+        relTol          0.05;
+        maxIter         50;
     }
         T
     {
