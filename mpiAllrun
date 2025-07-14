@@ -15,7 +15,7 @@ runApplication decomposePar
 
 # Parallel run
 echo "Running laserbeamFoam"
-mpirun --oversubscribe -np 18 laserbeamFoam -parallel > log.laserbeamFoam
+mpirun --oversubscribe -np 8 laserbeamFoam -parallel > log.laserbeamFoam
 
 # Loop through processor0 times and reconstruct only those with mesh changes (i.e., polyMesh exists);
 # OpenFOAM will automatically reconstruct field data for all intermediate times that use the same mesh.
