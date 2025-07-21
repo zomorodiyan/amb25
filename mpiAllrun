@@ -1,6 +1,6 @@
-#/bin/sh
+#!/bin/bash
 
-# Source tutorial run functions
+# Load OpenFOAM run functions
 . $WM_PROJECT_DIR/bin/tools/RunFunctions
 
 echo "Copying 'initial' to 0"
@@ -13,30 +13,19 @@ runApplication setFields
 # Decompose domain
 runApplication decomposePar
 
-# Parallel run
-echo "Running laserbeamFoam"
-mpirun --oversubscribe -np 8 laserbeamFoam -parallel > log.laserbeamFoam
+# Run simulation (timed)
+echo "Running laserbeamFoam in parallel on 4 cores..."
+/usr/bin/time -f "\n=== Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
+mpirun --oversubscribe -np 4 laserbeamFoam -parallel > log.laserbeamFoam 2> log.laserbeamFoam.time
 
-# Loop through processor0 times and reconstruct only those with mesh changes (i.e., polyMesh exists);
-# OpenFOAM will automatically reconstruct field data for all intermediate times that use the same mesh.
-echo "Starting reconstruction"
-for timeDir in processor0/*/
-do
-    time=$(basename "$timeDir")
+# Reconstruction
+echo "Reconstructing..."
+reconstructParMesh -constant > log.reconstructParMesh
+reconstructPar > log.reconstructPar
 
-    # Check if polyMesh exists in this time step
-    if [ -d "processor0/$time/polyMesh" ]; then
-        echo "Reconstructing mesh and fields at time = $time"
-
-        # Remove existing logs to ensure runApplication executes
-        rm -f log.reconstructParMesh log.reconstructPar
-
-        runApplication reconstructParMesh -time $time
-        runApplication reconstructPar -time $time
-    fi
-done
-
-echo "Reconstruction complete"
-
+# Clean up
 rm -r processor*/
-#touch case.foam
+touch case.foam
+
+echo "Done."
+

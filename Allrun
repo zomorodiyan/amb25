@@ -8,4 +8,14 @@ cp -r initial 0
 
 runApplication blockMesh
 runApplication setFields
-runApplication laserbeamFoam
+
+# Run laserbeamFoam with timing
+echo "Running laserbeamFoam..."
+/usr/bin/time -f "\n=== Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
+laserbeamFoam > log.laserbeamFoam 2> log.laserbeamFoam.time
+
+# Clean up
+touch case.foam
+
+echo "Done."
+
