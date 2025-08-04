@@ -31,8 +31,8 @@ poly_cp     (435.0 0.0 0 0 0 0 0 0); // IN718 specific heat capacity [J/kg·K]
 
 elec_resistivity	1e-6;
     
-Tsolidus 1658;
-Tliquidus 1723;
+//Tsolidus 1658;
+//Tliquidus 1723;
 
 
 // ************************************************************************* //
