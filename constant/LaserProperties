@@ -29,6 +29,7 @@ timeVsLaserPower
 V_incident	(0.087 1 0);//5° tilt toward +x //NORMALISED IN CODE
 
 laserRadius 0.000036;
+laserHeight 0.000150;
 
 //N_sub_divisions    6;
 N_sub_divisions	    2;

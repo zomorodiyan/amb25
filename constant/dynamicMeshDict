@@ -23,7 +23,8 @@ topoChanger
     mover           none;
 
     // How often to refine
-    refineInterval  1;
+    //refineInterval  1;
+    refineInterval  0; // <-- Set to 0 to disable refinement
 
     // Field to be refinement on
     field           refineflag;//n.0;

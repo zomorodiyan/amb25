@@ -20,11 +20,16 @@ mpirun --oversubscribe -np 4 laserbeamFoam -parallel > log.laserbeamFoam 2> log.
 
 # Reconstruction
 echo "Reconstructing..."
-reconstructParMesh -constant > log.reconstructParMesh
-reconstructPar > log.reconstructPar
+# Time reconstructParMesh
+/usr/bin/time -f "\n=== reconstructParMesh Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
+reconstructParMesh -constant > log.reconstructParMesh 2>> log.laserbeamFoam.time
+
+# Time reconstructPar
+/usr/bin/time -f "\n=== reconstructPar Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
+reconstructPar > log.reconstructPar 2>> log.laserbeamFoam.time
 
 # Clean up
-rm -r processor*/
+#rm -r processor*/
 touch case.foam
 
 echo "Done."
