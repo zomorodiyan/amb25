@@ -29,7 +29,7 @@ timeVsLaserPower
 V_incident	(0.087 1 0);//5° tilt toward +x //NORMALISED IN CODE
 
 laserRadius 0.000036;
-laserHeight 0.000220;
+laserHeight 0.000200; // manually set in the solver
 effectiveRadius 0.000054; // 1.5 * 0.000036
 
 //N_sub_divisions    6;

@@ -14,9 +14,9 @@ runApplication setFields
 runApplication decomposePar
 
 # Run simulation (timed)
-echo "Running laserbeamFoam in parallel on 16 cores..."
+echo "Running laserbeamFoam in parallel on 4 cores..."
 /usr/bin/time -f "\n=== Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
-mpirun --oversubscribe -np 16 laserbeamFoam-hs -parallel > log.laserbeamFoam 2> log.laserbeamFoam.time
+mpirun --oversubscribe -np 4 laserbeamFoam -parallel > log.laserbeamFoam 2> log.laserbeamFoam.time
 
 # Reconstruction
 echo "Reconstructing..."
