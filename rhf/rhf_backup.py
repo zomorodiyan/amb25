@@ -155,20 +155,14 @@ def export_rhf_table(y_max, turn_over_time, R, T, csv_name=None):
     pts, times, _, _, n1 = build_serpentine(y_max, turn_over_time)
     rhf = compute_rhf(pts, times, n1, R, T)
 
-    # Minimal filename if none provided
-    if csv_name is None:
-        # Simple case numbering: 1=large+fast, 2=small+fast, 3=large+slow, 4=small+slow
-        if y_max > 0.003 and turn_over_time < 0.002:
-            case_num = 1
-        elif y_max < 0.003 and turn_over_time < 0.002:
-            case_num = 2
-        elif y_max > 0.003 and turn_over_time > 0.002:
-            case_num = 3
-        else:
-            case_num = 4
-        csv_name = f"rhf_{case_num}.csv"
-    
-    csv_path = outdir / csv_name
+    # Descriptive filename if none provided
+    tag = (
+        f"y{y_max*1e3:.2f}mm_"
+        f"turn{turn_over_time*1e3:.2f}ms_"
+        f"R{R*1e6:.2f}um_"
+        f"T{T*1e3:.2f}ms"
+    )
+    csv_path = outdir / (csv_name or f"RHF_table_{tag}.csv")
 
     arr = np.column_stack([times, pts[:, 0], pts[:, 1], rhf])
     np.savetxt(csv_path, arr, delimiter=",", header="t,x,y,rhf", comments="")
