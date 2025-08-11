@@ -57,5 +57,54 @@ maxAlphaCo      3.0;
 
 maxDeltaT       5e-7;
 
+functions
+{
+  T_slice
+  {
+    type            surfaces;
+    libs            ("libsampling.so");
+
+    // run/write frequently
+    executeControl  runTime;
+    executeInterval 1e-6;
+    writeControl    runTime;
+    writeInterval   1e-6;
+
+    fields          (T);
+    interpolationScheme cellPoint;
+    surfaceFormat   vtk;
+
+    surfaces
+    (
+      // z = 0.001 plane
+      planeZ001
+      {
+        type        plane;
+        planeType   pointAndNormal;
+        pointAndNormalDict
+        {
+          basePoint     (0 0 0.001);
+          normalVector  (0 0 1);
+        }
+        interpolate  false;
+        triangulate  false;
+      }
+
+      // y = 0 plane
+      planeY0
+      {
+        type        plane;
+        planeType   pointAndNormal;
+        pointAndNormalDict
+        {
+          basePoint     (0 0 0);     // any point with y = 0
+          normalVector  (0 1 0);     // normal along +y
+        }
+        interpolate  false;          // set true if you want smoother values
+        triangulate  false;
+      }
+    );
+  }
+}
 
 // ************************************************************************* //
