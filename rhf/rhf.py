@@ -146,16 +146,59 @@ def draw_grid_figure(y_max, turn_over_time, filename):
     plt.close(fig)
     print(f"Saved: {outpath}")
 
+def export_rhf_table(y_max, turn_over_time, R, T, csv_name=None):
+    """
+    Build serpentine (y_max, turn_over_time), compute RHF with (R, T),
+    and write a CSV with columns: t, x, y, rhf.
+    R [m], T [s], y_max [m], turn_over_time [s].
+    """
+    pts, times, _, _, n1 = build_serpentine(y_max, turn_over_time)
+    rhf = compute_rhf(pts, times, n1, R, T)
 
-# =========================================================
+    # Descriptive filename if none provided
+    tag = (
+        f"y{y_max*1e3:.2f}mm_"
+        f"turn{turn_over_time*1e3:.2f}ms_"
+        f"R{R*1e6:.2f}um_"
+        f"T{T*1e3:.2f}ms"
+    )
+    csv_path = outdir / (csv_name or f"RHF_table_{tag}.csv")
+
+    arr = np.column_stack([times, pts[:, 0], pts[:, 1], rhf])
+    np.savetxt(csv_path, arr, delimiter=",", header="t,x,y,rhf", comments="")
+    print(f"Saved RHF table: {csv_path}")
+    return csv_path
+
+
+def export_all_four_tables(R=8e-6, T=3e-3):
+    """
+    Write four CSVs for the 4 pad cases:
+      A) y_max=0.00492, turn=TURN1
+      B) y_max=0.00092, turn=TURN1
+      C) y_max=0.00492, turn=TURN2
+      D) y_max=0.00092, turn=TURN2
+    """
+    cases = [
+        (0.00492, TURN1),
+        (0.00092, TURN1),
+        (0.00492, TURN2),
+        (0.00092, TURN2),
+    ]
+    paths = []
+    for y_max, turn in cases:
+        paths.append(export_rhf_table(y_max, turn, R, T))
+    return paths
+
+
 # Generate FOUR figures:
 #   A) y_max = 0.00492, turn_over_time = 0.00075 s
 #   B) y_max = 0.00092, turn_over_time = 0.00075 s
 #   C) y_max = 0.00492, turn_over_time = 0.00500 s
 #   D) y_max = 0.00092, turn_over_time = 0.00500 s
-# =========================================================
 draw_grid_figure(y_max=0.00492, turn_over_time=TURN1, filename="RHF_5x5_turn0p75.png")
 draw_grid_figure(y_max=0.00092, turn_over_time=TURN1, filename="RHF_5x1_turn0p75.png")
 draw_grid_figure(y_max=0.00492, turn_over_time=TURN2, filename="RHF_5x5_turn5p0.png")
 draw_grid_figure(y_max=0.00092, turn_over_time=TURN2, filename="RHF_5x1_turn5p0.png")
 
+# Generate the four RHF tables for R=8 µm, T=3 ms:
+export_all_four_tables(R=8e-6, T=3e-3)
