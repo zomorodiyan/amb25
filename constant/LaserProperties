@@ -30,8 +30,8 @@ V_incident	(0.087 1 0);//5° tilt toward +x //NORMALISED IN CODE
 
 laserRadius 0.000036;
 laserHeight 0.000100;
-//effectiveRadius 0.000054; // 1.5 * 0.000036
 effectiveRadius 0.000072; // 2.0 * 0.000036
+rhfTableFile   "constant/rhfTable.csv";
 
 //N_sub_divisions    6;
 N_sub_divisions	    2;
