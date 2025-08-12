@@ -5,7 +5,7 @@ and save both a CSV and a plot.
 
 Assumptions:
 - Data files: postProcessing/T_slice/<time>/planeZ0005.vtk (legacy VTK PolyData)
-- Melt pool exists iff any points have T >= 1580 and it touches y=0 when present.
+- Melt pool exists iff any points have T >= 1571.15 and it touches y=0 when present.
 - Width  = max_x - min_x
 - Depth  = max_y - max(min_y, 0)
 
@@ -18,13 +18,13 @@ from pathlib import Path
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 # ---- config ----
 BASE = Path("postProcessing/T_slice")
 SLICE_FILE = "planeZ0005.vtk"
-T_THRESHOLD = 1580.0
+T_THRESHOLD = 1571.15
 CSV_OUT = "meltpool_metrics_planeZ0005.csv"
-PNG_OUT = "meltpool_metrics_planeZ0005.png"
 # ---------------
 
 # VTK (legacy .vtk PolyData)
@@ -133,21 +133,24 @@ def main():
         from scipy.spatial import ConvexHull
         import matplotlib as mpl
         from mpl_toolkits.axes_grid1 import make_axes_locatable
+        # Define custom colormap: balanced blue -> purple -> red
+        custom_cmap = mcolors.LinearSegmentedColormap.from_list(
+            "balanced_blue_purple_red", ["#4F81BD", "#9E5CB2", "#E15759"])
         fig, ax = plt.subplots(figsize=(8, 8))
         # Normalize time for colormap
         norm = mpl.colors.Normalize(vmin=min(t_list), vmax=max(t_list))
-        cmap = plt.cm.viridis
+        cmap = custom_cmap
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         for idx, (bp, tval) in enumerate(zip(all_boundary_points, t_list)):
             color = cmap(norm(tval))
-            ax.plot(bp[:, 0], bp[:, 1], '.', color=color, alpha=0.7, markersize=2)
+            ax.plot(bp[:, 0], -bp[:, 1], '.', color=color, alpha=0.7, markersize=2)
             if len(bp) >= 3:
                 hull = ConvexHull(bp[:, :2])
                 hull_pts = bp[hull.vertices]
                 hull_pts = np.vstack([hull_pts, hull_pts[0]])
-                ax.plot(hull_pts[:, 0], hull_pts[:, 1], '-', color=color, alpha=0.7, linewidth=1.0)
+                ax.plot(hull_pts[:, 0], -hull_pts[:, 1], '-', color=color, alpha=0.7, linewidth=1.0)
         ax.set_xlabel("x")
-        ax.set_ylabel("y")
+        ax.set_ylabel("-y")
         ax.set_title(f"All melt boundary points and outlines across time (z = 0.001, T ≥ {T_THRESHOLD})")
         ax.grid(True, alpha=0.3)
         ax.set_aspect('equal', adjustable='box')  # Ensure equal aspect ratio
