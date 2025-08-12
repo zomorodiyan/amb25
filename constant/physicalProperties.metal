@@ -20,8 +20,8 @@ viscosityModel  constant;
 nu          4.3e-07; // IN718 kinematic viscosity [m^2/s]
 rho         8190.0;  // IN718 density [Kg/m^3]
 
-Tsolidus    1555.0;  // IN718 solidus temperature [K]
-Tliquidus   1605.0;  // IN718 liquidus temperature [K]
+Tsolidus    1533.15;  // IN718 Solidus [K] (AMB2025 Ch.6&7 description file)
+Tliquidus   1609.15;  // IN718 Liquidus[K] (AMB2025 Ch.6&7 description file)
 
 LatentHeat  2.9e5;   // IN718 latent heat of fusion [J/kg]
 beta        1.3e-5;  // IN718 thermal expansion coefficient [1/K]
