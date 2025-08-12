@@ -241,6 +241,120 @@ def export_all_four_tables(R=8e-6, T=3e-3):
         paths.append(export_rhf_table(y_max, turn, R, T))
     return paths
 
+def export_time_position_power(
+    y_max,
+    turn_over_time,
+    power=142.5,
+    power_func=None,          # kept for compatibility; ignored
+    map_2d_to_3d="x0z",
+    pos_filename="constant/timeVsLaserPosition",
+    pow_filename="constant/timeVsLaserPower",
+    float_fmt_time="{:.6f}",
+    float_fmt_coord=("{:.6f}", "{:.6f}", "{:.6f}"),
+    float_fmt_power="{:.6f}",
+    include_final_power_zero=True,
+):
+    """
+    Export two OpenFOAM-style files with MINIMAL entries:
+      Position: exactly 2 lines per vertical laser track (start & end).
+      Power:    constant 'power' while scanning a track, 0 during turn-around pauses.
+
+    Position file pattern (example):
+      (
+          (t_start_track0 (x y z))
+          (t_end_track0   (x y z))
+          (t_start_track1 (x y z))
+          (t_end_track1   (x y z))
+          ...
+      )
+
+    Power file pattern (events where value changes):
+      (
+          (t_start_track0 power)
+          (t_end_track0   0)
+          (t_start_track1 power)
+          (t_end_track1   0)
+          ...
+          (t_end_last     0)   # optional (controlled by include_final_power_zero)
+      )
+
+    Notes
+    -----
+    - power_func retained but ignored (model is piecewise constant ON/OFF).
+    - Tracks follow serpentine: even index goes y_min -> y_max; odd goes y_max -> y_min.
+    - Turn-around pause duration = turn_over_time (laser OFF, position not recorded separately).
+    - Mapping options:
+         "xy0": (x, y, 0)
+         "x0z": (x, 0, y)   (sample provided earlier)
+         "0xy": (0, x, y)
+    """
+    # Basic geometric/time quantities
+    track_length = abs(y_max - y_min)
+    track_time   = track_length / v
+
+    # Prepare directory
+    constant_dir = outdir / "constant"
+    constant_dir.mkdir(exist_ok=True)
+    pos_path = outdir / pos_filename
+    pow_path = outdir / pow_filename
+
+    fx_fmt, fy_fmt, fz_fmt = float_fmt_coord
+    p_fmt = float_fmt_power  # power formatter
+
+    # Write position file (2 lines per track)
+    with open(pos_path, "w") as fpos:
+        fpos.write("(\n")
+        for k in range(n_tracks):
+            x = x_min + k * pitch
+            # Serpentine direction
+            if k % 2 == 0:  # up
+                y_start, y_end = y_min, y_max
+            else:           # down
+                y_start, y_end = y_max, y_min
+
+            t_start = k * (track_time + turn_over_time)
+            t_end   = t_start + track_time
+
+            # Map to 3D
+            def map_point(xp, yp):
+                if map_2d_to_3d == "xy0":
+                    return xp, yp, 0.0
+                elif map_2d_to_3d == "x0z":
+                    return xp, 0.0, yp
+                elif map_2d_to_3d == "0xy":
+                    return 0.0, xp, yp
+                else:
+                    raise ValueError("Unsupported map_2d_to_3d option.")
+            x_s, y_s, z_s = map_point(x, y_start)
+            x_e, y_e, z_e = map_point(x, y_end)
+
+            fpos.write(
+                f"    ({float_fmt_time.format(t_start)}   "
+                f"({fx_fmt.format(x_s)} {fy_fmt.format(y_s)} {fz_fmt.format(z_s)}))\n"
+            )
+            fpos.write(
+                f"    ({float_fmt_time.format(t_end)}   "
+                f"({fx_fmt.format(x_e)} {fy_fmt.format(y_e)} {fz_fmt.format(z_e)}))\n"
+            )
+        fpos.write(")\n")
+
+    # Write power file (events at changes)
+    with open(pow_path, "w") as fpow:
+        fpow.write("(\n")
+        for k in range(n_tracks):
+            t_start = k * (track_time + turn_over_time)
+            t_end   = t_start + track_time
+
+            fpow.write(f"    ({float_fmt_time.format(t_start)}   {p_fmt.format(power)})\n")
+            fpow.write(f"    ({float_fmt_time.format(t_end)}   {p_fmt.format(0.0)})\n")
+        if not include_final_power_zero:
+            # Optionally remove final zero (rarely needed; left for flexibility)
+            pass
+        fpow.write(")\n")
+
+    print(f"Saved: {pos_path}")
+    print(f"Saved: {pow_path}")
+    return pos_path, pow_path
 
 # Generate FOUR figures:
 #   A) y_max = 0.00492, turn_over_time = 0.00075 s
@@ -257,3 +371,11 @@ print_simulation_durations()
 
 # Generate the four RHF tables for R=800 µm, T=3 ms:
 export_all_four_tables(R=0.80e-3, T=3.0e-3)
+
+# Example usage (uncomment to generate minimal OpenFOAM-style inputs):
+export_time_position_power(
+    y_max=0.00492,
+    turn_over_time=TURN1,
+    power=142.5,
+    map_2d_to_3d="x0z"
+)
