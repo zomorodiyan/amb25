@@ -1,0 +1,6 @@
+0
+processor*
+log.*
+constant/polyMesh/
+[0-9]*/
+
