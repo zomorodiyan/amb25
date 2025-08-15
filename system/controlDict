@@ -23,7 +23,7 @@ startTime       0;
 
 stopAt          endTime;
 
-endTime         3.001e-3;
+endTime         2.001e-3;
 
 deltaT          1.0e-8;
 
@@ -115,14 +115,14 @@ functions
         triangulate  false;
       }
 
-      // z = 0.0020 plane
-      planeZ0020
+      // z = 0.0025 plane
+      planeZ0015
       {
         type        plane;
         planeType   pointAndNormal;
         pointAndNormalDict
         {
-          basePoint     (0 0 0.0020);
+          basePoint     (0 0 0.0015);
           normalVector  (0 0 1);
         }
         interpolate  false;
