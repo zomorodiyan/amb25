@@ -4,7 +4,7 @@
 cd postProcessing/T_slice || { echo "Can't cd to postProcessing/T_slice"; exit 1; }
 
 # Update this list to match your actual file basenames:
-planes=(planeZ001 planeY0)
+planes=(planeZ0005 planeZ0010 planeZ0015 planeZ0020 planeZ0025 planeZ0030 planeZ0035 planeY0)
 
 # Numeric sort of time directories like 0.0002, 1e-6
 times=$(ls -1d [0-9]* 2>/dev/null | sort -g)

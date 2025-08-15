@@ -23,8 +23,7 @@ startTime       0;
 
 stopAt          endTime;
 
-//endTime         2.001e-3;
-endTime         1.001e-4;
+endTime         3.001e-3;
 
 deltaT          1.0e-8;
 
@@ -50,10 +49,8 @@ runTimeModifiable yes;
 
 adjustTimeStep  yes;
 
-maxCo           3.0;
-maxAlphaCo      3.0;
-//maxCo           0.25;
-//maxAlphaCo      0.3;
+maxCo           3.0; //0.25;
+maxAlphaCo      3.0; //0.3;
 
 maxDeltaT       5e-7;
 
@@ -66,9 +63,9 @@ functions
 
     // run/write frequently
     executeControl  runTime;
-    executeInterval 1e-6;
+    executeInterval 1e-5;
     writeControl    runTime;
-    writeInterval   1e-6;
+    writeInterval   1e-5;
 
     fields          (T);
     interpolationScheme cellPoint;
@@ -76,14 +73,56 @@ functions
 
     surfaces
     (
-      // z = 0.001 plane
-      planeZ001
+      // z = 0.0005 plane
+      planeZ0005
       {
         type        plane;
         planeType   pointAndNormal;
         pointAndNormalDict
         {
-          basePoint     (0 0 0.001);
+          basePoint     (0 0 0.0005);
+          normalVector  (0 0 1);
+        }
+        interpolate  false;
+        triangulate  false;
+      }
+
+      // z = 0.0010 plane
+      planeZ0010
+      {
+        type        plane;
+        planeType   pointAndNormal;
+        pointAndNormalDict
+        {
+          basePoint     (0 0 0.0010);
+          normalVector  (0 0 1);
+        }
+        interpolate  false;
+        triangulate  false;
+      }
+
+      // z = 0.0015 plane
+      planeZ0015
+      {
+        type        plane;
+        planeType   pointAndNormal;
+        pointAndNormalDict
+        {
+          basePoint     (0 0 0.0015);
+          normalVector  (0 0 1);
+        }
+        interpolate  false;
+        triangulate  false;
+      }
+
+      // z = 0.0020 plane
+      planeZ0020
+      {
+        type        plane;
+        planeType   pointAndNormal;
+        pointAndNormalDict
+        {
+          basePoint     (0 0 0.0020);
           normalVector  (0 0 1);
         }
         interpolate  false;
