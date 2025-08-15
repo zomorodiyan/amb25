@@ -167,7 +167,7 @@ def export_rhf_table(y_max, turn_over_time, R, T, csv_name=None):
         else:
             case_num = 4
         csv_name = f"rhf_{case_num}.csv"
-    
+
     csv_path = outdir / csv_name
 
     arr = np.column_stack([times, pts[:, 0], pts[:, 1], rhf])
@@ -184,16 +184,16 @@ def calculate_simulation_duration(y_max, turn_over_time):
     # Calculate single track length and time
     single_track_length = abs(y_max - y_min)
     single_track_time = single_track_length / v
-    
+
     # Total time for all tracks (scanning)
     total_track_time = n_tracks * single_track_time
-    
+
     # Total turn-around time (n_tracks - 1 pauses between tracks)
     total_turn_around_time = (n_tracks - 1) * turn_over_time
-    
+
     # Total simulation time
     total_time = total_track_time + total_turn_around_time
-    
+
     return total_time, single_track_time, total_track_time, total_turn_around_time
 
 def print_simulation_durations():
@@ -201,17 +201,17 @@ def print_simulation_durations():
     print("\n" + "="*80)
     print("SIMULATION DURATION ANALYSIS")
     print("="*80)
-    
+
     cases = [
         ("Case A: Large domain, fast turnaround", 0.00492, TURN1),
         ("Case B: Small domain, fast turnaround", 0.00092, TURN1),
         ("Case C: Large domain, slow turnaround", 0.00492, TURN2),
         ("Case D: Small domain, slow turnaround", 0.00092, TURN2),
     ]
-    
+
     for case_name, y_max, turn_time in cases:
         total_time, single_track, total_track, total_turn = calculate_simulation_duration(y_max, turn_time)
-        
+
         print(f"\n{case_name}:")
         print(f"  Domain size (Y): {y_max*1e3:.2f} mm")
         print(f"  Turnaround time: {turn_time*1e3:.4f} ms")
@@ -361,16 +361,16 @@ def export_time_position_power(
 #   B) y_max = 0.00092, turn_over_time = 0.00075 s
 #   C) y_max = 0.00492, turn_over_time = 0.00500 s
 #   D) y_max = 0.00092, turn_over_time = 0.00500 s
-draw_grid_figure(y_max=0.00492, turn_over_time=TURN1, filename="rhf_1.png")
-draw_grid_figure(y_max=0.00092, turn_over_time=TURN1, filename="rhf_2.png")
-draw_grid_figure(y_max=0.00492, turn_over_time=TURN2, filename="rhf_3.png")
-draw_grid_figure(y_max=0.00092, turn_over_time=TURN2, filename="rhf_4.png")
+draw_grid_figure(y_max=0.00492, turn_over_time=TURN1, filename="rhf_5x5_p75ms.png")
+draw_grid_figure(y_max=0.00092, turn_over_time=TURN1, filename="rhf_5x1_p75ms.png")
+draw_grid_figure(y_max=0.00492, turn_over_time=TURN2, filename="rhf_5x5_5ms.png")
+draw_grid_figure(y_max=0.00092, turn_over_time=TURN2, filename="rhf_5x1_5ms.png")
 
 # Print simulation duration analysis
 print_simulation_durations()
 
 # Generate the four RHF tables for R=800 µm, T=3 ms:
-export_all_four_tables(R=0.80e-3, T=3.0e-3)
+export_all_four_tables(R=0.80e-3, T=2.0e-3)
 
 # Example usage (uncomment to generate minimal OpenFOAM-style inputs):
 export_time_position_power(
