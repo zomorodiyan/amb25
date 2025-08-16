@@ -23,15 +23,15 @@ startTime       0;
 
 stopAt          endTime;
 
-endTime         270.001e-3;
-//endTime         0.501e-3;
+//endTime         270.001e-3;
+endTime         0.501e-3;
 
 deltaT          1.0e-8;
 
 writeControl    adjustableRunTime;
 
-writeInterval   1e-03;
-//writeInterval   1e-04;
+//writeInterval   1e-03;
+writeInterval   1e-04;
 
 purgeWrite      0;
 
@@ -90,13 +90,13 @@ functions
       }
 
       // z = 0.0025 plane
-      planeZ0015
+      planeZ0025
       {
         type        plane;
         planeType   pointAndNormal;
         pointAndNormalDict
         {
-          basePoint     (0 0 0.0015);
+          basePoint     (0 0 0.0025);
           normalVector  (0 0 1);
         }
         interpolate  true;
