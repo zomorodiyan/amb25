@@ -6,13 +6,13 @@
 #SBATCH -n 128                # Total MPI tasks
 #SBATCH -c 1                  # Cores per task
 #SBATCH -t 4-00:00:00         # Adjust time limit
-#SBATCH --job-name=openfoam-lbf
+#SBATCH --job-name=amb25-bigFast
 #SBATCH --output=job_output.log
 #SBATCH --error=job_error.log
 
 # Define variables
-CASE_DIR=/home/mzomoro1/amb25
-SIF_PATH=/home/mzomoro1/openfoam-container/lbf.sif
+CASE_DIR=/home/mzomoro1/amb25/bigFast
+SIF_PATH=/home/mzomoro1/amb25/lbf-he.sif
 LOG_TIME=$CASE_DIR/log.laserbeamFoam.time
 
 # Clean previous timing file
