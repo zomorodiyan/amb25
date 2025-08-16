@@ -339,7 +339,9 @@ def export_time_position_power(
         fpos.write(")\n")
 
 
-    # Write power file (events at changes, with step changes at start/end of each track)
+
+    # Write power file (events at changes, with 1us offset to avoid repeated times)
+    dt = 1e-6  # 1 microsecond offset
     with open(pow_path, "w") as fpow:
         fpow.write("(\n")
         for k in range(n_tracks):
@@ -348,14 +350,14 @@ def export_time_position_power(
 
             # Power ON at t_start
             fpow.write(f"    ({float_fmt_time.format(t_start)}   {p_fmt.format(power)})\n")
-            # Power ON at t_end (step stays ON until t_end)
-            fpow.write(f"    ({float_fmt_time.format(t_end)}   {p_fmt.format(power)})\n")
+            # Power ON just before t_end
+            fpow.write(f"    ({float_fmt_time.format(t_end - dt)}   {p_fmt.format(power)})\n")
             # Power OFF at t_end
             fpow.write(f"    ({float_fmt_time.format(t_end)}   {p_fmt.format(0.0)})\n")
-            # Power OFF at next t_start (if not last track)
+            # Power OFF just before next t_start (if not last track)
             if k < n_tracks - 1:
                 t_next_start = (k + 1) * (track_time + turn_over_time)
-                fpow.write(f"    ({float_fmt_time.format(t_next_start)}   {p_fmt.format(0.0)})\n")
+                fpow.write(f"    ({float_fmt_time.format(t_next_start - dt)}   {p_fmt.format(0.0)})\n")
         fpow.write(")\n")
 
     print(f"Saved: {pos_path}")
@@ -432,6 +434,6 @@ export_all_four_tables(R=0.80e-3, T=2.0e-3)
 export_time_position_power(
     y_max=0.00492,
     turn_over_time=TURN1,
-    power=142.5,
+    power=285,
     map_2d_to_3d="x0z"
 )
