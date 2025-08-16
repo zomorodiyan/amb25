@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --mem=128G
-#SBATCH -p htc
+#SBATCH -p general 
 #SBATCH -q public
 #SBATCH -N 1
 #SBATCH -n 128                # Total MPI tasks
