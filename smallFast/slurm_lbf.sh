@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --mem=64G
-#SBATCH -p htc 
+#SBATCH -p htc
 #SBATCH -q public
 #SBATCH -N 1
-#SBATCH -n 4                  # Total MPI tasks
+#SBATCH -n 24                 # Total MPI tasks
 #SBATCH -c 1                  # Cores per task
-#SBATCH -t 0-00:05:00         # Adjust time limit
+#SBATCH -t 2-00:00:00         # Adjust time limit
 #SBATCH --job-name=openfoam-lbf
 #SBATCH --output=job_output.log
 #SBATCH --error=job_error.log
