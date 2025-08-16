@@ -54,7 +54,7 @@ adjustTimeStep  yes;
 maxCo           3.0; //0.25;
 maxAlphaCo      3.0; //0.3;
 
-maxDeltaT       5e-6;
+maxDeltaT       1e-6;
 
 functions
 {
@@ -85,7 +85,7 @@ functions
           basePoint     (0 0 0.0005);
           normalVector  (0 0 1);
         }
-        interpolate  false;
+        interpolate  true;
         triangulate  false;
       }
 
@@ -99,7 +99,7 @@ functions
           basePoint     (0 0 0);     // any point with y = 0
           normalVector  (0 1 0);     // normal along +y
         }
-        interpolate  True;          // set true if you want smoother values
+        interpolate  true;          // set true if you want smoother values
         triangulate  false;
       }
     );

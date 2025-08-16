@@ -24,7 +24,7 @@ startTime       0;
 stopAt          endTime;
 
 endTime         270.001e-3;
-//endTime         1.001e-3;
+//endTime         0.501e-3;
 
 deltaT          1.0e-8;
 
@@ -54,7 +54,7 @@ adjustTimeStep  yes;
 maxCo           3.0; //0.25;
 maxAlphaCo      3.0; //0.3;
 
-maxDeltaT       5e-7;
+maxDeltaT       1e-6;
 
 functions
 {
@@ -85,35 +85,7 @@ functions
           basePoint     (0 0 0.0005);
           normalVector  (0 0 1);
         }
-        interpolate  false;
-        triangulate  false;
-      }
-
-      // z = 0.0010 plane
-      planeZ0010
-      {
-        type        plane;
-        planeType   pointAndNormal;
-        pointAndNormalDict
-        {
-          basePoint     (0 0 0.0010);
-          normalVector  (0 0 1);
-        }
-        interpolate  false;
-        triangulate  false;
-      }
-
-      // z = 0.0015 plane
-      planeZ0015
-      {
-        type        plane;
-        planeType   pointAndNormal;
-        pointAndNormalDict
-        {
-          basePoint     (0 0 0.0015);
-          normalVector  (0 0 1);
-        }
-        interpolate  false;
+        interpolate  true;
         triangulate  false;
       }
 
@@ -127,7 +99,7 @@ functions
           basePoint     (0 0 0.0015);
           normalVector  (0 0 1);
         }
-        interpolate  false;
+        interpolate  true;
         triangulate  false;
       }
 
@@ -141,7 +113,7 @@ functions
           basePoint     (0 0 0);     // any point with y = 0
           normalVector  (0 1 0);     // normal along +y
         }
-        interpolate  false;          // set true if you want smoother values
+        interpolate  true;          // set true if you want smoother values
         triangulate  false;
       }
     );
