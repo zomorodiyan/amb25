@@ -356,15 +356,65 @@ def export_time_position_power(
     print(f"Saved: {pow_path}")
     return pos_path, pow_path
 
-# Generate FOUR figures:
-#   A) y_max = 0.00492, turn_over_time = 0.00075 s
-#   B) y_max = 0.00092, turn_over_time = 0.00075 s
-#   C) y_max = 0.00492, turn_over_time = 0.00500 s
-#   D) y_max = 0.00092, turn_over_time = 0.00500 s
-draw_grid_figure(y_max=0.00492, turn_over_time=TURN1, filename="rhf_5x5_p75ms.png")
-draw_grid_figure(y_max=0.00092, turn_over_time=TURN1, filename="rhf_5x1_p75ms.png")
-draw_grid_figure(y_max=0.00492, turn_over_time=TURN2, filename="rhf_5x5_5ms.png")
-draw_grid_figure(y_max=0.00092, turn_over_time=TURN2, filename="rhf_5x1_5ms.png")
+
+# New function: single figure with 4 subplots for fixed R, T
+def plot_all_cases_subplots(R=0.80e-3, T=2.0e-3, filename="rhf_all_cases.png"):
+    """
+    Plot a 2x2 grid of subplots for all 4 (y_max, turn_over_time) cases, using fixed R and T.
+    """
+    cases = [
+        (0.00492, TURN1, "A: Large domain, fast turn"),
+        (0.00092, TURN1, "B: Small domain, fast turn"),
+        (0.00492, TURN2, "C: Large domain, slow turn"),
+        (0.00092, TURN2, "D: Small domain, slow turn"),
+    ]
+    fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+    axes = axes.ravel()
+    cmap = plt.cm.viridis
+
+    for ax, (y_max, turn_over_time, label) in zip(axes, cases):
+        pts, times, all_track_pts, track_lengths, n1 = build_serpentine(y_max, turn_over_time)
+        rhf = compute_rhf(pts, times, n1, R, T)
+
+        vmin, vmax = float(np.min(rhf)), float(np.max(rhf))
+        if vmax <= vmin:
+            vmax = vmin + 1e-12
+        norm = plt.Normalize(vmin=vmin, vmax=vmax)
+
+        offset = 0
+        for k, p in enumerate(all_track_pts):
+            n = track_lengths[k]
+            r = rhf[offset:offset + n]
+            segs = np.stack([p[:-1], p[1:]], axis=1)
+            seg_vals = 0.5 * (r[:-1] + r[1:])
+            lc = LineCollection(segs, array=seg_vals, cmap=cmap, norm=norm, linewidths=2.0, zorder=2)
+            ax.add_collection(lc)
+            offset += n
+
+        ax.scatter(pts[:, 0], pts[:, 1], c=rhf, cmap=cmap, norm=norm,
+                   s=10, marker='s', edgecolors='none', zorder=3)
+
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        cb = fig.colorbar(sm, ax=ax, fraction=0.046, pad=0.04)
+
+        ax.set_xlim(x_min, x_max)
+        ax.set_ylim(y_min, y_max)
+        ax.set_aspect('equal', adjustable='box')
+        ax.grid(True, alpha=0.2)
+        ax.set_title(f"{label}\n$y_{{max}}$={y_max*1e3:.2f} mm, Turn={turn_over_time*1e3:.2f} ms")
+        ax.set_xlabel("x [m]")
+        ax.set_ylabel("y [m]")
+
+    fig.suptitle(f"Residual Heat Factor, R = {R*1e3:.2f} mm, T = {T*1e3:.2f} ms", fontsize=16)
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    outpath = outdir / filename
+    fig.savefig(outpath, dpi=600, bbox_inches='tight')
+    plt.close(fig)
+    print(f"Saved: {outpath}")
+
+# Call the new function to generate the single figure with 4 subplots
+plot_all_cases_subplots(R=0.80e-3, T=2.0e-3, filename="rhf_all_cases.png")
 
 # Print simulation duration analysis
 print_simulation_durations()
