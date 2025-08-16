@@ -1,0 +1,30 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  10
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      phaseProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //            
+
+phases          (metal gas);                                                               
+
+sigma           1.90;               // Surface tension [N/m] for IN718 at ~1400 °C       
+
+dsigmadT       -3.0e-4;             // dσ/dT [N/m·K] for IN718 (approximate)             
+
+p0             100000.0;                                                               
+Tvap           3068.0;             // Vaporization temperature [K] (approx. for IN718)   
+Mm             5.58e-2;            // Molar mass [kg/mol]                                
+LatentHeatVap  7.45e6;             // Latent heat of vaporization [J/kg] (estimated)     
+
+// ************************************************************************* //
+
+
