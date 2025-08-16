@@ -157,16 +157,16 @@ def export_rhf_table(y_max, turn_over_time, R, T, csv_name=None):
 
     # Minimal filename if none provided
     if csv_name is None:
-        # Simple case numbering: 1=large+fast, 2=small+fast, 3=large+slow, 4=small+slow
+        # Naming: 5x5 = large domain, 5x1 = small domain; fast/slow = turn time
         if y_max > 0.003 and turn_over_time < 0.002:
-            case_num = 1
-        elif y_max < 0.003 and turn_over_time < 0.002:
-            case_num = 2
-        elif y_max > 0.003 and turn_over_time > 0.002:
-            case_num = 3
+            case_ = '5x5_fast'
+        elif y_max > 0.003 and turn_over_time >= 0.002:
+            case_ = '5x5_slow'
+        elif y_max <= 0.003 and turn_over_time < 0.002:
+            case_ = '5x1_fast'
         else:
-            case_num = 4
-        csv_name = f"rhf_{case_num}.csv"
+            case_ = '5x1_slow'
+        csv_name = f"constant/rhfTable_{case_}.csv"
 
     csv_path = outdir / csv_name
 
@@ -338,18 +338,24 @@ def export_time_position_power(
             )
         fpos.write(")\n")
 
-    # Write power file (events at changes)
+
+    # Write power file (events at changes, with step changes at start/end of each track)
     with open(pow_path, "w") as fpow:
         fpow.write("(\n")
         for k in range(n_tracks):
             t_start = k * (track_time + turn_over_time)
             t_end   = t_start + track_time
 
+            # Power ON at t_start
             fpow.write(f"    ({float_fmt_time.format(t_start)}   {p_fmt.format(power)})\n")
+            # Power ON at t_end (step stays ON until t_end)
+            fpow.write(f"    ({float_fmt_time.format(t_end)}   {p_fmt.format(power)})\n")
+            # Power OFF at t_end
             fpow.write(f"    ({float_fmt_time.format(t_end)}   {p_fmt.format(0.0)})\n")
-        if not include_final_power_zero:
-            # Optionally remove final zero (rarely needed; left for flexibility)
-            pass
+            # Power OFF at next t_start (if not last track)
+            if k < n_tracks - 1:
+                t_next_start = (k + 1) * (track_time + turn_over_time)
+                fpow.write(f"    ({float_fmt_time.format(t_next_start)}   {p_fmt.format(0.0)})\n")
         fpow.write(")\n")
 
     print(f"Saved: {pos_path}")
