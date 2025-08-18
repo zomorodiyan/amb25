@@ -11,7 +11,7 @@
 #SBATCH --error=job_error.log
 
 # Define variables
-CASE_DIR=/home/mzomoro1/amb25/smallFast
+CASE_DIR=/home/mzomoro1/amb25/smallFast/
 SIF_PATH=/home/mzomoro1/amb25/lbf-he.sif
 LOG_TIME=$CASE_DIR/log.laserbeamFoam.time
 
