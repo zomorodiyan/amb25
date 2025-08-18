@@ -5,13 +5,13 @@
 #SBATCH -N 1
 #SBATCH -n 32                 # Total MPI tasks
 #SBATCH -c 1                  # Cores per task
-#SBATCH -t 2-00:00:00         # Adjust time limit
-#SBATCH --job-name=amb25-smallFast
+#SBATCH -t 3-00:00:00         # Adjust time limit
+#SBATCH --job-name=smallFast
 #SBATCH --output=job_output.log
 #SBATCH --error=job_error.log
 
 # Define variables
-CASE_DIR=/home/mzomoro1/amb25/bigFast
+CASE_DIR=/home/mzomoro1/amb25/smallFast
 SIF_PATH=/home/mzomoro1/amb25/lbf-he.sif
 LOG_TIME=$CASE_DIR/log.laserbeamFoam.time
 
@@ -47,10 +47,10 @@ srun --mpi=pmi2 apptainer exec $SIF_PATH bash -c "source /opt/OpenFOAM/OpenFOAM-
 # ----------------------------
 # Reconstruction with timing
 # ----------------------------
-echo "Running reconstructParMesh..."
-/usr/bin/time -f "\n=== reconstructParMesh Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
-apptainer exec $SIF_PATH bash -c "source /opt/OpenFOAM/OpenFOAM-10/etc/bashrc && cd $CASE_DIR && reconstructParMesh -constant" \
-> $CASE_DIR/log.reconstructParMesh 2>> $LOG_TIME
+#echo "Running reconstructParMesh..."
+#/usr/bin/time -f "\n=== reconstructParMesh Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
+#apptainer exec $SIF_PATH bash -c "source /opt/OpenFOAM/OpenFOAM-10/etc/bashrc && cd $CASE_DIR && reconstructParMesh -constant" \
+#> $CASE_DIR/log.reconstructParMesh 2>> $LOG_TIME
 
 echo "Running reconstructPar..."
 /usr/bin/time -f "\n=== reconstructPar Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
@@ -58,7 +58,6 @@ apptainer exec $SIF_PATH bash -c "source /opt/OpenFOAM/OpenFOAM-10/etc/bashrc &&
 > $CASE_DIR/log.reconstructPar 2>> $LOG_TIME
 
 # Clean up processors and create case.foam
-foam_exec "rm -r processor* && touch case.foam"
+#foam_exec "rm -r processor* && touch case.foam"
 
 echo "Simulation complete."
-
