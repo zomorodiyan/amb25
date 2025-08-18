@@ -98,7 +98,7 @@ functions
           basePoint     (0 0 0.0010);
           normalVector  (0 0 1);
         }
-        interpolate  talse;
+        interpolate  true;
         triangulate  false;
       }
 
@@ -112,21 +112,21 @@ functions
           basePoint     (0 0 0.0015);
           normalVector  (0 0 1);
         }
-        interpolate  talse;
+        interpolate  true;
         triangulate  false;
       }
 
       // z = 0.0025 plane
-      planeZ0015
+      planeZ0025
       {
         type        plane;
         planeType   pointAndNormal;
         pointAndNormalDict
         {
-          basePoint     (0 0 0.0015);
+          basePoint     (0 0 0.0025);
           normalVector  (0 0 1);
         }
-        interpolate  talse;
+        interpolate  true;
         triangulate  false;
       }
 
@@ -140,7 +140,7 @@ functions
           basePoint     (0 0 0);     // any point with y = 0
           normalVector  (0 1 0);     // normal along +y
         }
-        interpolate  talse;          // set true if you want smoother values
+        interpolate  true;          // set true if you want smoother values
         triangulate  false;
       }
     );
