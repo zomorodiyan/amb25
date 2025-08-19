@@ -29,9 +29,16 @@ timeVsLaserPower
 V_incident	(0.087 1 0);//5° tilt toward +x //NORMALISED IN CODE
 
 laserRadius 0.000036;
-//laserHeight 0.000100;
-effectiveRadius 0.000052; // 2 x laserRadius
-rhfTableFile   "constant/rhfTable_5x5_fast.csv";
+
+// 20um calibration
+//laserHeight 0.00001085;
+//effectiveRadius 0.000060;
+//absorptivity 0.48;
+
+// 40um calibration
+laserHeight 0.000098;
+effectiveRadius 0.000064;
+absorptivity 0.48;
 
 //N_sub_divisions    6;
 N_sub_divisions	    2;
