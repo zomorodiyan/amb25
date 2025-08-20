@@ -7,3 +7,4 @@ cleanCase
 
 echo "Removing 0 and VTKs"
 rm -rf 0 VTKs
+rm *png *csv *txt
