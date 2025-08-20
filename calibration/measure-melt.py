@@ -103,7 +103,7 @@ def main():
             from scipy.spatial import cKDTree
             tree = cKDTree(pts[:, :2])
             boundary_points = []
-            neighbor_radius = 45e-6  # for 40um cells
+            neighbor_radius = 25e-6  # for 40um cells
             for i, (pt, temp) in enumerate(zip(pts, T)):
                 for j in tree.query_ball_point(pt[:2], r=neighbor_radius):
                     if j == i:

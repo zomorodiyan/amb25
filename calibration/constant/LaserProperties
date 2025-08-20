@@ -31,14 +31,14 @@ V_incident	(0.087 1 0);//5° tilt toward +x //NORMALISED IN CODE
 laserRadius 0.000036; // amb2025
 
 // 20um calibration
-//laserHeight 0.00001085;
-//effectiveRadius 0.000060;
-//absorptivity 0.48;
+laserHeight 0.00001285;
+effectiveRadius 0.000060;
+absorptivity 0.47;
 
 // 40um calibration
-laserHeight 0.000098;
-effectiveRadius 0.000064;
-absorptivity 0.48;
+//laserHeight 0.000098;
+//effectiveRadius 0.000064;
+//absorptivity 0.48;
 
 rhfTableFile   "constant/rhfTable_5x5_fast.csv";
 

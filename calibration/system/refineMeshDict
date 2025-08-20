@@ -1,0 +1,25 @@
+FoamFile
+{
+    version 2.0;
+    format ascii;
+    class dictionary;
+    location "system";
+    object refineMeshDict;
+}
+
+set refineBand;        // use the cellSet made by topoSet
+hexRef8 yes;           // split into 8 (halve Δx,Δy,Δz)
+
+useHexTopology yes;
+geometricCut  no;
+writeMesh     yes;
+
+coordinateSystem
+{
+    type   global;
+    origin (0 0 0);
+    e1     (1 0 0);
+    e2     (0 1 0);    // e3 will be e1 ^ e2
+}
+directions (e1 e2 e3); // refine in x,y,z (isotropic)
+

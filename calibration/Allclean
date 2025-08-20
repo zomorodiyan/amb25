@@ -6,5 +6,5 @@
 cleanCase
 
 echo "Removing 0 and VTKs"
-rm -rf 0 VTKs
+rm -rf 0 VTKs constant/polyMesh.base constant/polyMesh
 rm *png *csv *txt

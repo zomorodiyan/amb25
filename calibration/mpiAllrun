@@ -8,15 +8,18 @@ cp -r initial 0
 
 # Serial steps
 runApplication blockMesh
+runApplication topoSet -dict system/topoSetDict
+runApplication refineMesh -overwrite -dict system/refineMeshDict # 40 → 20 µm 
+runApplication checkMesh
 runApplication setFields
 
 # Decompose domain
 runApplication decomposePar
 
 # Run simulation (timed)
-echo "Running laserbeamFoam in parallel on 16 cores..."
+echo "Running laserbeamFoam in parallel on 8 cores..."
 /usr/bin/time -f "\n=== Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
-mpirun --oversubscribe -np 16 laserbeamFoam -parallel > log.laserbeamFoam 2> log.laserbeamFoam.time
+mpirun --oversubscribe -np 8 laserbeamFoam -parallel > log.laserbeamFoam 2> log.laserbeamFoam.time
 
 # Reconstruction
 echo "Reconstructing..."
