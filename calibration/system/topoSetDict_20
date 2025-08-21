@@ -1,0 +1,23 @@
+FoamFile
+{
+    version 2.0;
+    format ascii;
+    class dictionary;
+    location "system";
+    object topoSetDict;
+}
+actions
+(
+    // Inner band for 20 µm: y in [0, 0.0002]
+    {
+        name    refine20;
+        type    cellSet;
+        action  new;
+        source  boxToCell;
+        sourceInfo
+        {
+            box (-1e2 0 -1e2) (1e2 0.0002 1e2);
+        }
+    }
+);
+

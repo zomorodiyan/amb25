@@ -1,39 +1,61 @@
 #!/bin/bash
+set -euo pipefail
 
 # Load OpenFOAM run functions
-. $WM_PROJECT_DIR/bin/tools/RunFunctions
+. "$WM_PROJECT_DIR/bin/tools/RunFunctions"
 
-echo "Copying 'initial' to 0"
-cp -r initial 0
+# 0) Start clean (optional but avoids stale processors)
+rm -rf processor* 2>/dev/null || true
 
-# Serial steps
+# 1) Fresh mesh
 runApplication blockMesh
-runApplication topoSet -dict system/topoSetDict
-runApplication refineMesh -overwrite -dict system/refineMeshDict # 40 → 20 µm 
-runApplication checkMesh
+
+# Ensure time=0 exists so topoSet writes its sets there
+mkdir -p 0
+
+# 2) --- PASS 1: 80 → 40 µm ---
+# Build set for pass 1 at time 0, then refine
+runApplication topoSet -time 0 -dict system/topoSetDict_40
+runApplication refineMesh -overwrite -dict system/refineMeshDict_40
+mv log.topoSet log.topoSet40 || true
+mv log.refineMesh log.refineMesh40 || true
+
+# 3) --- PASS 2: 40 → 20 µm ---
+# Rebuild inner set on the refined mesh (still time 0), then refine
+runApplication topoSet -time 0 -dict system/topoSetDict_20
+runApplication refineMesh -overwrite -dict system/refineMeshDict_20
+mv log.topoSet log.topoSet20 || true
+mv log.refineMesh log.refineMesh20 || true
+
+echo "Syncing refined mesh (time 0 → constant)"
+rm -rf constant/polyMesh
+cp -r 0/polyMesh constant/
+
+# 4) Reset fields WITHOUT touching the refined mesh in 0/polyMesh
+echo "Resetting fields (preserving mesh in 0/polyMesh)"
+find 0 -mindepth 1 -maxdepth 1 ! -name 'polyMesh' -exec rm -rf {} +
+cp -r initial/. 0/
+
+
+# Optional initialization on the refined mesh
 runApplication setFields
 
-# Decompose domain
-runApplication decomposePar
+# Sanity: check the mesh you will solve on (time 0)
+runApplication checkMesh -time 0
 
-# Run simulation (timed)
+# 5) Decompose & run
+runApplication decomposePar
 echo "Running laserbeamFoam in parallel on 8 cores..."
 /usr/bin/time -f "\n=== Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
 mpirun --oversubscribe -np 8 laserbeamFoam -parallel > log.laserbeamFoam 2> log.laserbeamFoam.time
 
-# Reconstruction
+# 6) Reconstruct MESH first (into constant), then FIELDS
 echo "Reconstructing..."
-# Time reconstructParMesh
 /usr/bin/time -f "\n=== reconstructParMesh Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
 reconstructParMesh -constant > log.reconstructParMesh 2>> log.laserbeamFoam.time
-
-# Time reconstructPar
 /usr/bin/time -f "\n=== reconstructPar Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
 reconstructPar > log.reconstructPar 2>> log.laserbeamFoam.time
 
-# Clean up
-#rm -r processor*/
 touch case.foam
-
 echo "Done."
 

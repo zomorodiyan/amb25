@@ -1,0 +1,23 @@
+FoamFile
+{
+    version 2.0;
+    format ascii;
+    class dictionary;
+    location "system";
+    object topoSetDict;
+}
+actions
+(
+    // Band for 40 µm: y in [0, 0.00050]
+    {
+        name    refine40;
+        type    cellSet;
+        action  new;
+        source  boxToCell;
+        sourceInfo
+        {
+            box (-1e2 0 -1e2) (1e2 0.00050 1e2);
+        }
+    }
+);
+
