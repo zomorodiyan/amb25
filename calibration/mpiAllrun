@@ -13,14 +13,14 @@ runApplication blockMesh
 # Ensure time=0 exists so topoSet writes its sets there
 mkdir -p 0
 
-# 2) --- PASS 1: 80 → 40 µm ---
+# 2) --- refinement 1: 80 → 40 µm ---
 # Build set for pass 1 at time 0, then refine
 runApplication topoSet -time 0 -dict system/topoSetDict_40
 runApplication refineMesh -overwrite -dict system/refineMeshDict_40
 mv log.topoSet log.topoSet40 || true
 mv log.refineMesh log.refineMesh40 || true
 
-# 3) --- PASS 2: 40 → 20 µm ---
+# 3) --- refinement 2: 40 → 20 µm ---
 # Rebuild inner set on the refined mesh (still time 0), then refine
 runApplication topoSet -time 0 -dict system/topoSetDict_20
 runApplication refineMesh -overwrite -dict system/refineMeshDict_20
@@ -37,17 +37,32 @@ find 0 -mindepth 1 -maxdepth 1 ! -name 'polyMesh' -exec rm -rf {} +
 cp -r initial/. 0/
 
 
-# Optional initialization on the refined mesh
+# initialization of initial Temperature
 runApplication setFields
 
 # Sanity: check the mesh you will solve on (time 0)
 runApplication checkMesh -time 0
 
+
+# Parse -n argument for number of processors (default 8)
+NPROC=32
+while [[ $# -gt 0 ]]; do
+	case $1 in
+		-n|--np)
+			NPROC="$2"
+			shift 2
+			;;
+		*)
+			shift
+			;;
+	esac
+done
+
 # 5) Decompose & run
 runApplication decomposePar
-echo "Running laserbeamFoam in parallel on 8 cores..."
+echo "Running laserbeamFoam in parallel on $NPROC cores..."
 /usr/bin/time -f "\n=== Timing ===\nElapsed time: %E\nUser time: %U\nCPU usage: %P" \
-mpirun --oversubscribe -np 8 laserbeamFoam -parallel > log.laserbeamFoam 2> log.laserbeamFoam.time
+mpirun --oversubscribe -np $NPROC laserbeamFoam -parallel > log.laserbeamFoam 2> log.laserbeamFoam.time
 
 # 6) Reconstruct MESH first (into constant), then FIELDS
 echo "Reconstructing..."
