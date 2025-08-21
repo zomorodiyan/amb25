@@ -402,6 +402,61 @@ def plot_all_cases_subplots(R=0.80e-3, T=2.0e-3, filename="rhf_all_cases.png"):
         ax.scatter(pts[:, 0], pts[:, 1], c=rhf, cmap=cmap, norm=norm,
                    s=10, marker='s', edgecolors='none', zorder=3)
 
+        # Add fine red dashed line at y=0.5mm for all cases
+        ax.axhline(0.0005, color='red', linestyle='--', linewidth=2.5, zorder=10)
+        # Add bold red points at intersections with y=0.5mm
+        y_cross = 0.0005
+        # Use the same (large) heights for all domains
+        base_offset_y = 0.00010  # 0.10 mm
+        scale_offset = 0.00020   # 0.20 mm
+        dot_size = 15
+        cross_xs = []
+        cross_ys = []
+        cross_rhfs = []
+        for i in range(len(pts)-1):
+            y0, y1 = pts[i,1], pts[i+1,1]
+            if (y0 - y_cross) * (y1 - y_cross) <= 0 and y0 != y1:
+                x0, x1 = pts[i,0], pts[i+1,0]
+                t = (y_cross - y0) / (y1 - y0)
+                x_cross = x0 + t * (x1 - x0)
+                rhf_cross = rhf[i] + t * (rhf[i+1] - rhf[i])
+                # Offset is base + scaled by normalized rhf
+                rhf_norm = (rhf_cross - np.min(rhf)) / (np.max(rhf) - np.min(rhf) + 1e-12)
+                y_offset = base_offset_y + scale_offset * rhf_norm
+                cross_xs.append(x_cross)
+                cross_ys.append(y_cross + y_offset)
+                cross_rhfs.append(rhf_cross)
+        if cross_xs:
+            ax.scatter(cross_xs, cross_ys,
+                       color='red', s=dot_size, marker='o', edgecolor='black', linewidth=1.5, zorder=20)
+
+        # Add fine red dashed line at y=2.5mm for large cases (y_max > 0.003)
+        if y_max > 0.003:
+            ax.axhline(0.0025, color='red', linestyle='--', linewidth=2.5, zorder=10)
+            # Add bold red points at intersections with y=2.5mm
+            y_cross2 = 0.0025
+            base_offset_y2 = 0.00010
+            scale_offset2 = 0.00020
+            dot_size2 = 15
+            cross_xs2 = []
+            cross_ys2 = []
+            cross_rhfs2 = []
+            for i in range(len(pts)-1):
+                y0, y1 = pts[i,1], pts[i+1,1]
+                if (y0 - y_cross2) * (y1 - y_cross2) <= 0 and y0 != y1:
+                    x0, x1 = pts[i,0], pts[i+1,0]
+                    t = (y_cross2 - y0) / (y1 - y0)
+                    x_cross = x0 + t * (x1 - x0)
+                    rhf_cross = rhf[i] + t * (rhf[i+1] - rhf[i])
+                    rhf_norm2 = (rhf_cross - np.min(rhf)) / (np.max(rhf) - np.min(rhf) + 1e-12)
+                    y_offset2 = base_offset_y2 + scale_offset2 * rhf_norm2
+                    cross_xs2.append(x_cross)
+                    cross_ys2.append(y_cross2 + y_offset2)
+                    cross_rhfs2.append(rhf_cross)
+            if cross_xs2:
+                ax.scatter(cross_xs2, cross_ys2,
+                           color='red', s=dot_size2, marker='o', edgecolor='black', linewidth=1.5, zorder=20)
+
         sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
         cb = fig.colorbar(sm, ax=ax, fraction=0.046, pad=0.04)
@@ -422,7 +477,7 @@ def plot_all_cases_subplots(R=0.80e-3, T=2.0e-3, filename="rhf_all_cases.png"):
     print(f"Saved: {outpath}")
 
 # Call the new function to generate the single figure with 4 subplots
-plot_all_cases_subplots(R=0.80e-3, T=2.0e-3, filename="rhf_all_cases.png")
+plot_all_cases_subplots(R=1.50e-3, T=3.0e-3, filename="rhf_all_cases.png")
 
 # Print simulation duration analysis
 print_simulation_durations()
