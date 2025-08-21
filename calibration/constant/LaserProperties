@@ -32,7 +32,7 @@ laserRadius 0.000036; // amb2025
 
 // 20um-80um calibration
 laserHeight 0.0001;
-effectiveRadius 0.000045;
+effectiveRadius 0.000047;
 absorptivity 0.49;
 
 // 40um calibration
