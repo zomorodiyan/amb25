@@ -8,7 +8,7 @@ FoamFile
 }
 actions
 (
-    // Inner band for 20 µm: y in [0, 0.0002]
+    // Inner band for 20 µm: y in [0, 0.00021]
     {
         name    refine20;
         type    cellSet;
@@ -16,7 +16,7 @@ actions
         source  boxToCell;
         sourceInfo
         {
-            box (-1e2 0 -1e2) (1e2 0.0002 1e2);
+            box (-1e2 0 -1e2) (1e2 0.00021 1e2);
         }
     }
 );
