@@ -95,7 +95,12 @@ def compute_rhf(pts, times, n1, R, T):
     if baseline <= 0:
         i0, i1 = int(0.4 * n1), int(0.6 * n1)
         baseline = np.median(rhf_raw[i0:i1]) if np.any(rhf_raw[i0:i1] > 0) else 1.0
-    return (rhf_raw / baseline) if baseline > 0 else rhf_raw
+    if baseline > 0:
+        rhf_norm = rhf_raw / baseline
+        rhf_norm[rhf_norm < 0.7] = 0.7
+        return rhf_norm
+    else:
+        return rhf_raw
 
 def draw_grid_figure(y_max, turn_over_time, filename):
     """Make a 2x2 grid for given y_max and turn_over_time; save to PNG."""
@@ -378,7 +383,13 @@ def plot_all_cases_subplots(R=0.80e-3, T=2.0e-3, filename="rhf_all_cases.png"):
     ]
     fig, axes = plt.subplots(2, 2, figsize=(12, 10))
     axes = axes.ravel()
-    cmap = plt.cm.viridis
+    from matplotlib.colors import LinearSegmentedColormap
+    custom_cmap = LinearSegmentedColormap.from_list(
+        "blue_gradient",
+        ["#001133", "#3399ff", "#b3e6ff"],  # very dark blue, medium blue, light blue
+        N=256
+    )
+    cmap = custom_cmap
 
     for ax, (y_max, turn_over_time, label) in zip(axes, cases):
         pts, times, all_track_pts, track_lengths, n1 = build_serpentine(y_max, turn_over_time)
@@ -477,13 +488,13 @@ def plot_all_cases_subplots(R=0.80e-3, T=2.0e-3, filename="rhf_all_cases.png"):
     print(f"Saved: {outpath}")
 
 # Call the new function to generate the single figure with 4 subplots
-plot_all_cases_subplots(R=1.50e-3, T=3.0e-3, filename="rhf_all_cases.png")
+plot_all_cases_subplots(R=1.4e-3, T=2.8e-3, filename="rhf_all_cases.png")
 
 # Print simulation duration analysis
 print_simulation_durations()
 
-# Generate the four RHF tables for R=800 µm, T=3 ms:
-export_all_four_tables(R=0.80e-3, T=2.0e-3)
+# Generate the four RHF tables for R=1.5 mm, T=3 ms:
+export_all_four_tables(R=1.40e-3, T=2.8e-3)
 
 # Example usage (uncomment to generate minimal OpenFOAM-style inputs):
 export_time_position_power(
