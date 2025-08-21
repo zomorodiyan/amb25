@@ -45,7 +45,7 @@ runApplication checkMesh -time 0
 
 
 # Parse -n argument for number of processors (default 8)
-NPROC=32
+NPROC=8
 while [[ $# -gt 0 ]]; do
 	case $1 in
 		-n|--np)
