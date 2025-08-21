@@ -25,32 +25,19 @@ timeVsLaserPower
     file    "$FOAM_CASE/constant/timeVsLaserPower";
     outOfBounds clamp;
 }
+V_incident	(0.087 1 0);//5° tilt toward +x // not used in lbf-he
 
-V_incident	(0.087 1 0);//5° tilt toward +x //NORMALISED IN CODE
-
-laserRadius 0.000036; // amb2025
-
+laserRadius 0.000036;
 // 20um-80um calibration
 laserHeight 0.0001;
 effectiveRadius 0.000047;
 absorptivity 0.498;
 
-// 40um calibration
-//laserHeight 0.000098;
-//effectiveRadius 0.000064;
-//absorptivity 0.48;
-
 rhfTableFile   "constant/rhfTable_5x5_fast.csv";
 
-//N_sub_divisions    6;
 N_sub_divisions	    2;
-
-
 wavelength	1.070e-6;
 e_num_density	5.83e29;
-//elec_resistivity	1.0e-6;
-
 Radius_Flavour	2.0;
-
 useLocalSearch    true;//false;
 
