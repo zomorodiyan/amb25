@@ -15,7 +15,7 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-application     Flint_multiphaseEulerFoamD;
+application     smallSlow;
 
 startFrom       latestTime;
 
@@ -23,15 +23,15 @@ startTime       0;
 
 stopAt          endTime;
 
-endTime         270.001e-3;
-//endTime         0.501e-3;
+endTime         270.01e-3;
 
 deltaT          1.0e-8;
 
 writeControl    adjustableRunTime;
 
-writeInterval   5e-03;
-//writeInterval   1e-04;
+//writeInterval   1e-05;
+writeInterval   1e10;
+writeFieldsOnly (T);
 
 purgeWrite      0;
 
@@ -113,11 +113,20 @@ functions
           basePoint     (0 0 0);     // any point with y = 0
           normalVector  (0 1 0);     // normal along +y
         }
-        interpolate  true;          // set true if you want smoother values
+        interpolate  true;           // set true if you want smoother values
         triangulate  false;
       }
     );
   }
-}
+
+  T_only
+  {
+    type            writeObjects;
+    libs            ("libutilityFunctionObjects.so");
+    writeControl    runTime;
+    writeInterval   1e-3;
+    fields          (T);
+  }
+};
 
 // ************************************************************************* //
