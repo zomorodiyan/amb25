@@ -33,7 +33,7 @@ laserHeight 0.0001;
 effectiveRadius 0.000047;
 absorptivity 0.498;
 
-rhfTableFile   "constant/rhfTable_5x5_fast.csv";
+rhfTableFile   "constant/rhfTable.csv";
 
 N_sub_divisions	    2;
 wavelength	1.070e-6;
