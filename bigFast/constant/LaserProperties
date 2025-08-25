@@ -1,1 +1,47 @@
-calibration/constant/LaserProperties
+/*--------------------------------*- C++ -*----------------------------------*\
+  =========                 |
+  \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox
+   \\    /   O peration     | Website:  https://openfoam.org
+    \\  /    A nd           | Version:  6
+     \\/     M anipulation  |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      PhaseFieldProperties;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+timeVsLaserPosition
+{
+    file    "$FOAM_CASE/constant/timeVsLaserPosition";
+    outOfBounds clamp;
+}
+
+timeVsLaserPower
+{
+    file    "$FOAM_CASE/constant/timeVsLaserPower";
+    outOfBounds clamp;
+}
+V_incident	(0.087 1 0);//5° tilt toward +x // not used in lbf-he
+
+laserRadius 0.000036;
+// 20um-80um calibration zero taper
+//laserHeight 0.0001;
+//effectiveRadius 0.000047;
+//absorptivity 0.498;
+laserHeight 0.00015;
+effectiveRadius 0.000050;
+absorptivity 1.05;
+taperLength 0.00012; // 20um  
+
+rhfTableFile   "constant/rhfTable.csv";
+
+N_sub_divisions	    2;
+wavelength	1.070e-6;
+e_num_density	5.83e29;
+Radius_Flavour	2.0;
+useLocalSearch    true;//false;
+
