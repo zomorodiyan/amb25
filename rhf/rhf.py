@@ -98,6 +98,7 @@ def compute_rhf(pts, times, n1, R, T):
     if baseline > 0:
         rhf_norm = rhf_raw / baseline
         rhf_norm[rhf_norm < 0.7] = 0.7
+        rhf_norm[rhf_norm > 1.002] = 1.002
         return rhf_norm
     else:
         return rhf_raw
@@ -108,7 +109,8 @@ def draw_grid_figure(y_max, turn_over_time, filename):
 
     fig, axes = plt.subplots(2, 2, figsize=(10, 10))
     axes = axes.ravel()
-    cmap = plt.cm.viridis
+    # Use a rainbow colormap that repeats 3 times
+    cmap = plt.cm.hsv
 
     for ax, (R, T) in zip(axes, pairs):
         rhf = compute_rhf(pts, times, n1, R, T)  # per-panel normalization inside
@@ -117,7 +119,12 @@ def draw_grid_figure(y_max, turn_over_time, filename):
         vmin, vmax = float(np.min(rhf)), float(np.max(rhf))
         if vmax <= vmin:
             vmax = vmin + 1e-12
-        norm = plt.Normalize(vmin=vmin, vmax=vmax)
+        # Custom normalization: map RHF to [0, 3] so hsv cycles 3 times
+        class RepeatNorm(plt.Normalize):
+            def __call__(self, value, clip=None):
+                normed = (value - vmin) / (vmax - vmin)
+                return (3 * normed) % 1.0
+        norm = RepeatNorm(vmin=vmin, vmax=vmax)
 
         # Solid lines with linearly varying color between nodes
         offset = 0
