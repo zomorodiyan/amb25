@@ -73,7 +73,7 @@ def main():
     parser = argparse.ArgumentParser(description="Compute melt-pool width/depth for multiple Z-slices.")
     parser.add_argument('--zlist', nargs='+', type=int, default=DEFAULT_ZLIST,
                         help="List of Z-slice indices (e.g. 5 10 15 20 25 30 35 for planeZ0005, planeZ0010, ...)")
-    parser.add_argument('--boundaries-z', type=int, default=10,
+    parser.add_argument('--boundaries-z', type=int, default=5,
                         help="Z-slice index to use for boundaries.png coloring by time (default: 10 for planeZ0010)")
     args = parser.parse_args()
     zlist = args.zlist
