@@ -25,7 +25,7 @@ import argparse
 # ---- config ----
 BASE = Path("postProcessing/T_slice")
 T_THRESHOLD = 1571.15
-DEFAULT_ZLIST = [5, 10, 15, 20]
+DEFAULT_ZLIST = [5, 10, 15, 20, 25]
 # ---------------
 
 # VTK (legacy .vtk PolyData)
@@ -73,8 +73,8 @@ def main():
     parser = argparse.ArgumentParser(description="Compute melt-pool width/depth for multiple Z-slices.")
     parser.add_argument('--zlist', nargs='+', type=int, default=DEFAULT_ZLIST,
                         help="List of Z-slice indices (e.g. 5 10 15 20 25 30 35 for planeZ0005, planeZ0010, ...)")
-    parser.add_argument('--boundaries-z', type=int, default=10,
-                        help="Z-slice index to use for boundaries.png coloring by time (default: 10 for planeZ0010)")
+    parser.add_argument('--boundaries-z', type=int, default=15,
+                        help="Z-slice index to use for boundaries.png coloring by time (default: 15 for planeZ0015). Change this to any available z-slice (e.g. 5, 10, 20, 25) to plot a different plane.")
     args = parser.parse_args()
     zlist = args.zlist
     boundaries_z = args.boundaries_z
@@ -191,44 +191,44 @@ def main():
         z_cmap = plt.get_cmap('tab10') if len(zvals) <= 10 else plt.get_cmap('tab20')
         z_to_color = {z: z_cmap(i % z_cmap.N) for i, z in enumerate(zvals)}
         fig, ax = plt.subplots(figsize=(10, 6))
-        # Keep lists for z=10 to annotate max later
-        z10_t, z10_widths, z10_depths = None, None, None
-        for z in zvals:
-            z_points = sorted([(t, bp) for zz, t, bp in all_boundary_points if zz == z], key=lambda x: x[0])
-            t_list = [t for t, _ in z_points]
-            min_x_list = [float(bp[:,0].min()) for _, bp in z_points]
-            max_x_list = [float(bp[:,0].max()) for _, bp in z_points]
-            min_y_list = [float(bp[:,1].min()) for _, bp in z_points]
-            max_y_list = [float(bp[:,1].max()) for _, bp in z_points]
-            width_list = [mx - mn for mn, mx in zip(min_x_list, max_x_list)]
-            depth_list = [max_y - max(mn_y, 0.0) for mn_y, max_y in zip(min_y_list, max_y_list)]
-            color = z_to_color[z]
-            ax.plot(t_list, width_list, label=f"Width z={z/10000:.4f}", color=color, linestyle='-')
-            ax.plot(t_list, depth_list, label=f"Depth z={z/10000:.4f}", color=color, linestyle='--')
-            if z == 10:
-                z10_t, z10_widths, z10_depths = t_list, width_list, depth_list
-        # Add dashed max lines and labels for z=10 if present
-        if z10_t and z10_widths:
-            # Ensure axis limits exist
-            ax.relim(); ax.autoscale()
-            x_min, x_max = ax.get_xlim()
-            # Width max
-            max_w = max(z10_widths)
-            max_w_idx = z10_widths.index(max_w)
-            max_w_time = z10_t[max_w_idx]
-            frac_w = (max_w_time - x_min) / float(x_max - x_min) if x_max > x_min else 1.0
-            ax.axhline(max_w, xmax=frac_w, color=z_to_color.get(10, 'k'), linestyle='--', alpha=0.8)
-            x_offset = (x_max - x_min) * 0.03
-            ax.text(x_min + x_offset, max_w, f"{max_w:.4g}", color=z_to_color.get(10, 'k'), va="bottom", ha="left",
-                    fontsize=10, fontweight='bold', bbox=dict(facecolor='white', edgecolor=z_to_color.get(10, 'k'), boxstyle='round,pad=0.2'))
-            # Depth max
-            max_d = max(z10_depths)
-            max_d_idx = z10_depths.index(max_d)
-            max_d_time = z10_t[max_d_idx]
-            frac_d = (max_d_time - x_min) / float(x_max - x_min) if x_max > x_min else 1.0
-            ax.axhline(max_d, xmax=frac_d, color=z_to_color.get(10, 'k'), linestyle='--', alpha=0.8)
-            ax.text(x_min + x_offset, max_d, f"{max_d:.4g}", color=z_to_color.get(10, 'k'), va="bottom", ha="left",
-                    fontsize=10, fontweight='bold', bbox=dict(facecolor='white', edgecolor=z_to_color.get(10, 'k'), boxstyle='round,pad=0.2'))
+    # Keep lists for z=15 to annotate max later
+    z15_t, z15_widths, z15_depths = None, None, None
+    for z in zvals:
+        z_points = sorted([(t, bp) for zz, t, bp in all_boundary_points if zz == z], key=lambda x: x[0])
+        t_list = [t for t, _ in z_points]
+        min_x_list = [float(bp[:,0].min()) for _, bp in z_points]
+        max_x_list = [float(bp[:,0].max()) for _, bp in z_points]
+        min_y_list = [float(bp[:,1].min()) for _, bp in z_points]
+        max_y_list = [float(bp[:,1].max()) for _, bp in z_points]
+        width_list = [mx - mn for mn, mx in zip(min_x_list, max_x_list)]
+        depth_list = [max_y - max(mn_y, 0.0) for mn_y, max_y in zip(min_y_list, max_y_list)]
+        color = z_to_color[z]
+        ax.plot(t_list, width_list, label=f"Width z={z/10000:.4f}", color=color, linestyle='-')
+        ax.plot(t_list, depth_list, label=f"Depth z={z/10000:.4f}", color=color, linestyle='--')
+        if z == 15:
+            z15_t, z15_widths, z15_depths = t_list, width_list, depth_list
+    # Add dashed max lines and labels for z=15 if present
+    if z15_t and z15_widths:
+        # Ensure axis limits exist
+        ax.relim(); ax.autoscale()
+        x_min, x_max = ax.get_xlim()
+        # Width max
+        max_w = max(z15_widths)
+        max_w_idx = z15_widths.index(max_w)
+        max_w_time = z15_t[max_w_idx]
+        frac_w = (max_w_time - x_min) / float(x_max - x_min) if x_max > x_min else 1.0
+        ax.axhline(max_w, xmax=frac_w, color=z_to_color.get(15, 'k'), linestyle='--', alpha=0.8)
+        x_offset = (x_max - x_min) * 0.03
+        ax.text(x_min + x_offset, max_w, f"{max_w:.4g}", color=z_to_color.get(15, 'k'), va="bottom", ha="left",
+            fontsize=10, fontweight='bold', bbox=dict(facecolor='white', edgecolor=z_to_color.get(15, 'k'), boxstyle='round,pad=0.2'))
+        # Depth max
+        max_d = max(z15_depths)
+        max_d_idx = z15_depths.index(max_d)
+        max_d_time = z15_t[max_d_idx]
+        frac_d = (max_d_time - x_min) / float(x_max - x_min) if x_max > x_min else 1.0
+        ax.axhline(max_d, xmax=frac_d, color=z_to_color.get(15, 'k'), linestyle='--', alpha=0.8)
+        ax.text(x_min + x_offset, max_d, f"{max_d:.4g}", color=z_to_color.get(15, 'k'), va="bottom", ha="left",
+            fontsize=10, fontweight='bold', bbox=dict(facecolor='white', edgecolor=z_to_color.get(15, 'k'), boxstyle='round,pad=0.2'))
         ax.set_xlabel("Time")
         ax.set_ylabel("Length")
         ax.set_title(f"Melted area width and depth vs time (multiple z, T ≥ {T_THRESHOLD})")
