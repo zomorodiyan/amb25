@@ -14,7 +14,6 @@ Parameters:
 
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 TILT_ANGLE = 5.0  # degrees
 
@@ -62,28 +61,39 @@ def integrand(r, theta, s, effectiveRadius, laserHeight, taperLength, laserRadiu
     # Return with cylindrical Jacobian
     return gaussian_val * r
 
-def calculate_integral_monte_carlo(effectiveRadius, laserHeight, taperLength, laserRadius, n_samples=1000000):
-    """Calculate integral using Monte Carlo method."""
-    s_samples = np.random.uniform(0, laserHeight, n_samples)
+def calculate_integral_loops(effectiveRadius, laserHeight, taperLength, laserRadius, n_s=100, n_r=50, n_theta=100):
+    """Calculate integral using simple nested loops."""
+    sigma = laserRadius / 2.0
     integral_sum = 0.0
-    valid_samples = 0
 
-    for s in s_samples:
+    # Create integration grids
+    s_vals = np.linspace(-laserRadius, laserHeight, n_s)
+    theta_vals = np.linspace(0, 2*np.pi, n_theta)
+
+    # Grid spacing for integration
+    ds = laserHeight / n_s
+    dtheta = 2*np.pi / n_theta
+
+    for s in s_vals:
         max_r = get_radius_at_position(s, effectiveRadius, laserHeight, taperLength)
         if max_r > 0:
-            r = np.random.uniform(0, max_r)
-            theta = np.random.uniform(0, 2*np.pi)
+            # Create r grid for this s
+            r_vals = np.linspace(0, max_r, n_r)
+            dr = max_r / n_r
 
-            # Check if point is above y=0 surface
-            x, y, z = to_cartesian(r, theta, s)
-            if y >= 0:
-                sigma = laserRadius / 2.0
-                gaussian_val = gaussian_function(r, sigma)
-                volume_element = max_r**2 * laserHeight * 2*np.pi
-                integral_sum += gaussian_val * r * volume_element
-                valid_samples += 1
+            for r in r_vals:
+                for theta in theta_vals:
+                    # Check if point is above y=0 surface
+                    x, y, z = to_cartesian(r, theta, s)
+                    if y >= 0:
+                        # Calculate integrand: Gaussian * r (cylindrical Jacobian)
+                        gaussian_val = gaussian_function(r, sigma)
+                        integrand_val = gaussian_val * r
 
-    return integral_sum / valid_samples if valid_samples > 0 else 0.0
+                        # Add to integral with volume element
+                        integral_sum += integrand_val * dr * dtheta * ds
+
+    return integral_sum
 
 def visualize_object(effectiveRadius, laserHeight, taperLength, laserRadius):
     """Visualize the tilted object and Gaussian function."""
@@ -141,6 +151,39 @@ def visualize_object(effectiveRadius, laserHeight, taperLength, laserRadius):
     plt.tight_layout()
     plt.show()
 
+def check_geometry(effectiveRadius, laserHeight, taperLength):
+    """Check if the tilted geometry makes physical sense."""
+    tilt_rad = np.radians(TILT_ANGLE)
+
+    # At s=0 (start), what's the y-coordinate for points at max radius?
+    s = 0
+    r = effectiveRadius
+
+    # Check the most extreme points (theta where sin(theta) = ±1)
+    y_min_at_start = s * np.cos(tilt_rad) - r * 1.0 * np.sin(tilt_rad)  # sin(theta) = 1
+    y_max_at_start = s * np.cos(tilt_rad) - r * (-1.0) * np.sin(tilt_rad)  # sin(theta) = -1
+
+    # At s=laserHeight (end), what's the y-coordinate?
+    s = laserHeight
+    r = get_radius_at_position(s, effectiveRadius, laserHeight, taperLength)
+    y_at_end = s * np.cos(tilt_rad)  # r=0 at the tip
+
+    print("Geometry Check:")
+    print(f"  At start (s=0): y ranges from {y_min_at_start:.6e} to {y_max_at_start:.6e}")
+    print(f"  At end (s={laserHeight:.6e}): y = {y_at_end:.6e}")
+    print(f"  Tilt creates y-offset of {effectiveRadius * np.sin(tilt_rad):.6e} at max radius")
+
+    # Check if any volume exists above y=0
+    if y_max_at_start <= 0:
+        print("  WARNING: Entire cylinder may be below y=0 plane!")
+        return False
+    elif y_min_at_start < 0:
+        print("  Some volume is cut off by y=0 plane (this is expected)")
+        return True
+    else:
+        print("  All volume is above y=0 plane")
+        return True
+
 def main():
     """Calculate the integral with example parameters."""
     # Parameters
@@ -148,6 +191,10 @@ def main():
     laserHeight = 0.000140
     taperLength = 0.000100
     laserRadius = 0.000036
+    # effectiveRadius = 0.000100
+    # laserHeight = 0.000280
+    # taperLength = 0.000200
+    # laserRadius = 0.000072
 
     print("3D Integral for Tilted Tapered Cylinder")
     print("=" * 40)
@@ -159,10 +206,14 @@ def main():
     print(f"Tilt Angle: {TILT_ANGLE}°")
     print()
 
-    # Monte Carlo integration
-    print("Calculating integral using Monte Carlo method...")
-    result = calculate_integral_monte_carlo(effectiveRadius, laserHeight, taperLength, laserRadius)
-    print(f"Result: {result:.6f}")
+    # Check geometry first
+    check_geometry(effectiveRadius, laserHeight, taperLength)
+    print()
+
+    # Calculate integral using loops
+    print("Calculating integral using nested loops...")
+    result = calculate_integral_loops(effectiveRadius, laserHeight, taperLength, laserRadius)
+    print(f"Result: {result:.6e}")
 
     # Visualization
     print("\nGenerating plots...")
