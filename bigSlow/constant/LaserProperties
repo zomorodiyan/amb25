@@ -28,14 +28,11 @@ timeVsLaserPower
 V_incident	(0.087 1 0);//5° tilt toward +x // not used in lbf-he
 
 laserRadius 0.000036;
-// 20um-80um calibration zero taper
-//laserHeight 0.0001;
-//effectiveRadius 0.000047;
-//absorptivity 0.498;
-laserHeight 0.00015;
+
+laserHeight 0.000139;
 effectiveRadius 0.000050;
-absorptivity 1.05;
-taperLength 0.00012; // 20um  
+absorptivity 0.86;
+taperLength 0.000094;
 
 rhfTableFile   "constant/rhfTable.csv";
 
