@@ -4,4 +4,4 @@ log.*
 */constant/polyMesh/
 [0-9]*/
 case.foam
-
+results

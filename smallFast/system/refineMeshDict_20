@@ -1,1 +1,9 @@
-/media/data2/August/amb25/calibration/system/refineMeshDict_20
+FoamFile{version 2.0; format ascii; class dictionary; location "system"; object refineMeshDict;}
+set refine20;
+hexRef8 yes;
+useHexTopology yes;
+geometricCut  no;
+writeMesh     yes;
+coordinateSystem{type global; origin (0 0 0); e1 (1 0 0); e2 (0 1 0);}
+directions (e1 e2 e3);
+
