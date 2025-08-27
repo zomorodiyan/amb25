@@ -97,8 +97,8 @@ def compute_rhf(pts, times, n1, R, T):
         baseline = np.median(rhf_raw[i0:i1]) if np.any(rhf_raw[i0:i1] > 0) else 1.0
     if baseline > 0:
         rhf_norm = rhf_raw / baseline
-        rhf_norm[rhf_norm < 0.7] = 0.7
-        rhf_norm[rhf_norm > 1.002] = 1.002
+        rhf_norm[rhf_norm < 0.866] = 0.866
+        rhf_norm[rhf_norm > 1.034] = 1.034
         return rhf_norm
     else:
         return rhf_raw
