@@ -98,7 +98,7 @@ def compute_rhf(pts, times, n1, R, T):
     if baseline > 0:
         rhf_norm = rhf_raw / baseline
         rhf_norm[rhf_norm < 0.866] = 0.866
-        rhf_norm[rhf_norm > 1.034] = 1.034
+        rhf_norm[rhf_norm > 1.078] = 1.078
         return rhf_norm
     else:
         return rhf_raw
