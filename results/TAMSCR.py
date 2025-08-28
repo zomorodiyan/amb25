@@ -34,16 +34,52 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # ----------------------- CONFIG -----------------------
 BASE_DIR = "/media/data2/August/amb25/smallFast/postProcessing/T_slice"  # folder containing time-step directories
 VTK_FILENAME = "planeY0.vtk"                                             # VTK file name inside each time folder
-THRESHOLD_TEMP = 1000.0                                                  # K (solidus threshold used throughout)
+THRESHOLD_TEMP = 1533.15                                                 # K (solidus threshold used throughout)
 TARGET_COOL_TEMP = 1423.15                                               # K (SCR target)
-UNDEFINED_FILL = NaN                                                     # value to use in contours when undefined
+UNDEFINED_FILL = 0                                                       # value to use in contours when undefined
 N_PIXELS_FOR_TIMESERIES = 5                                              # how many pixels to plot in the time-series
-MAX_TIME_STEPS = 100                                                     # limit for loading (evenly sampled across range)
+MAX_TIME_STEPS = 400                                                     # limit for loading (evenly sampled across range)
 RESULTS_DIR = "/media/data2/August/amb25/results"                        # outputs folder
 # ------------------------------------------------------
 
 
 class VTKTemperatureAnalyzer:
+    def create_tam_point_plot(self, tam: np.ndarray, figsize: Tuple[int, int] = (10, 4)):
+        """Scatter plot of TAM over x–z; undefined TAM (<=0 or NaN) -> UNDEFINED_FILL. Uses square markers."""
+        vals = tam.copy()
+        vals[~(vals > 0)] = UNDEFINED_FILL
+        x = self.coordinates[:, 0]
+        z = self.coordinates[:, 2]
+        fig, ax = plt.subplots(figsize=figsize)
+        sc = ax.scatter(x, z, c=vals, cmap='viridis', s=20, marker='s', edgecolors='none')
+        cbar = fig.colorbar(sc, ax=ax)
+        cbar.set_label("TAM (s)")
+        ax.set_aspect('equal')
+        ax.set_xlabel('(m)')
+        ax.set_ylabel('(m)')
+        ax.set_title('TAM Point Plot (pixel values, squares)')
+        ax.grid(True, alpha=0.15)
+        return fig
+
+    def create_scr_point_plot(self, scr: np.ndarray, max_scr: float = 10.0, figsize: Tuple[int, int] = (10, 4)):
+        """Scatter plot of SCR over x–z; undefined (NaN, <=0) or >max_scr -> UNDEFINED_FILL. Uses square markers."""
+        vals = scr.copy()
+        # Mask invalid (NaN, <=0) or too large values
+        mask_invalid = (np.isnan(vals)) | (vals <= 0) | (vals > max_scr)
+        plot_vals = np.full_like(vals, UNDEFINED_FILL, dtype=float)
+        plot_vals[~mask_invalid] = vals[~mask_invalid]
+        x = self.coordinates[:, 0]
+        z = self.coordinates[:, 2]
+        fig, ax = plt.subplots(figsize=figsize)
+        sc = ax.scatter(x, z, c=plot_vals, cmap='viridis', s=20, marker='s', edgecolors='none')
+        cbar = fig.colorbar(sc, ax=ax)
+        cbar.set_label("Solidus Cooling Rate (K/s)")
+        ax.set_aspect('equal')
+        ax.set_xlabel('(m)')
+        ax.set_ylabel('(m)')
+        ax.set_title(f'SCR Point Plot (pixel values, squares)\n(cooling from {THRESHOLD_TEMP} K to {TARGET_COOL_TEMP} K, >{max_scr} hidden)')
+        ax.grid(True, alpha=0.15)
+        return fig
     """Analyzes temperature data from VTK files across time steps."""
 
     def __init__(self, data_directory: str, vtk_filename: str = "planeY0.vtk"):
@@ -498,15 +534,18 @@ class VTKTemperatureAnalyzer:
         return fig
 
     def create_scr_contour(self, scr: np.ndarray, figsize: Tuple[int, int] = (10, 4)):
-        """tricontourf of SCR; undefined (NaN) -> UNDEFINED_FILL"""
+        """tricontourf of SCR; undefined (NaN, <=0) -> UNDEFINED_FILL"""
         vals = scr.copy()
-        vals[np.isnan(vals)] = UNDEFINED_FILL
+        vals[np.isnan(vals) | (vals <= 0)] = UNDEFINED_FILL
         x = self.coordinates[:, 0]
         z = self.coordinates[:, 2]
         fig, ax = plt.subplots(figsize=figsize)
         cs = ax.tricontourf(x, z, vals, levels=20)
-        cbar = fig.colorbar(cs, ax=ax); cbar.set_label("Solidus Cooling Rate (K/s)")
-        ax.set_aspect('equal'); ax.set_xlabel('(m)'); ax.set_ylabel('(m)')
+        cbar = fig.colorbar(cs, ax=ax)
+        cbar.set_label("Solidus Cooling Rate (K/s)")
+        ax.set_aspect('equal')
+        ax.set_xlabel('(m)')
+        ax.set_ylabel('(m)')
         ax.set_title(f'SCR Contour (cooling from {THRESHOLD_TEMP} K to {TARGET_COOL_TEMP} K)')
         ax.grid(True, alpha=0.15)
         return fig
@@ -570,15 +609,23 @@ def main():
             ])
     print(f"Saved: {COMBINED_CSV}")
 
+    # --- Print summary statistics for TAM and SCR ---
+    # Only consider valid (TAM > 0) and valid SCR (finite, >0, <= max_scr)
+    valid_tam = tam[tam > 0]
+    valid_scr = scr[(~np.isnan(scr)) & (scr > 0) & (scr <= 1e7)]
+    print("\nSummary statistics:")
+    print(f"{'N-datapoints':>12}\t{'TAM Mean':>10}\t{'TAM Median':>10}\t{'TAM Std. Dev.':>12}\t{'N-datapoints':>12}\t{'SCR Mean':>10}\t{'SCR Median':>10}\t{'SCR Std. Dev.':>12}")
+    print(f"{len(valid_tam):12d}\t{np.mean(valid_tam):10.4f}\t{np.median(valid_tam):10.4f}\t{np.std(valid_tam):12.4f}\t{len(valid_scr):12d}\t{np.mean(valid_scr):10.4f}\t{np.median(valid_scr):10.4f}\t{np.std(valid_scr):12.4f}")
+
     # --- Contours with UNDEFINED_FILL ---
-    print("Creating TAM contour (undefined -> -1e-6)...")
-    fig_tam = analyzer.create_tam_contour(tam)
+    print("Creating TAM point plot (undefined -> -1e-6, squares)...")
+    fig_tam = analyzer.create_tam_point_plot(tam)
     plt.savefig(TAM_CONTOUR_PNG, dpi=300, bbox_inches='tight')
     plt.close(fig_tam)
     print(f"Saved: {TAM_CONTOUR_PNG}")
 
-    print("Creating SCR contour (undefined -> -1e-6)...")
-    fig_scr = analyzer.create_scr_contour(scr)
+    print("Creating SCR point plot (undefined -> -1e-6, squares, values > max_scr hidden)...")
+    fig_scr = analyzer.create_scr_point_plot(scr, max_scr=1e7)
     plt.savefig(SCR_CONTOUR_PNG, dpi=300, bbox_inches='tight')
     plt.close(fig_scr)
     print(f"Saved: {SCR_CONTOUR_PNG}")
