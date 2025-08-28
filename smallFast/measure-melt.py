@@ -193,6 +193,63 @@ def main():
         fig, ax = plt.subplots(figsize=(10, 6))
         # Keep lists for z=10 to annotate max later
         z10_t, z10_widths, z10_depths = None, None, None
+        # Track peak values across all z-slices
+        all_width_peaks = {}  # z -> [(peak_width, time_at_peak), ...]
+        all_depth_peaks = {}  # z -> [(peak_depth, time_at_peak), ...]
+        
+        def find_peaks(values, times, min_prominence=None, min_time_separation=0.001):
+            """Find local maxima (peaks) in the data with optional minimum prominence and time separation."""
+            if len(values) < 3:
+                return []
+            
+            # Convert to numpy arrays for easier processing
+            vals = np.array(values)
+            ts = np.array(times)
+            
+            # If no prominence specified, use 5% of the data range as minimum prominence
+            if min_prominence is None:
+                data_range = vals.max() - vals.min()
+                min_prominence = 0.05 * data_range
+            
+            peaks = []
+            for i in range(1, len(vals) - 1):
+                # Check if this point is a local maximum
+                if vals[i] > vals[i-1] and vals[i] > vals[i+1]:
+                    # Check prominence (how much higher than surrounding minima)
+                    left_min = vals[:i+1].min()
+                    right_min = vals[i:].min()
+                    prominence = vals[i] - max(left_min, right_min)
+                    
+                    if prominence >= min_prominence:
+                        peaks.append((vals[i], ts[i]))
+            
+            # Filter peaks that are too close in time, keeping the larger one
+            if not peaks:
+                return []
+                
+            # Sort peaks by time
+            peaks.sort(key=lambda x: x[1])
+            
+            filtered_peaks = []
+            for value, time in peaks:
+                # Check if this peak is too close to any already accepted peak
+                too_close = False
+                for i, (prev_value, prev_time) in enumerate(filtered_peaks):
+                    if abs(time - prev_time) < min_time_separation:
+                        too_close = True
+                        # If current peak is larger, replace the previous one
+                        if value > prev_value:
+                            filtered_peaks[i] = (value, time)
+                        break
+                
+                # If not too close to any existing peak, add it
+                if not too_close:
+                    filtered_peaks.append((value, time))
+            
+            # Sort by time again and return
+            filtered_peaks.sort(key=lambda x: x[1])
+            return filtered_peaks
+        
         for z in zvals:
             z_points = sorted([(t, bp) for zz, t, bp in all_boundary_points if zz == z], key=lambda x: x[0])
             t_list = [t for t, _ in z_points]
@@ -202,9 +259,30 @@ def main():
             max_y_list = [float(bp[:,1].max()) for _, bp in z_points]
             width_list = [mx - mn for mn, mx in zip(min_x_list, max_x_list)]
             depth_list = [max_y - max(mn_y, 0.0) for mn_y, max_y in zip(min_y_list, max_y_list)]
+            
+            # Find peaks in width and depth
+            if width_list and len(width_list) >= 3:
+                width_peaks = find_peaks(width_list, t_list)
+                all_width_peaks[z] = width_peaks
+            
+            if depth_list and len(depth_list) >= 3:
+                depth_peaks = find_peaks(depth_list, t_list)
+                all_depth_peaks[z] = depth_peaks
+            
             color = z_to_color[z]
             ax.plot(t_list, width_list, label=f"Width z={z/10000:.4f}", color=color, linestyle='-')
             ax.plot(t_list, depth_list, label=f"Depth z={z/10000:.4f}", color=color, linestyle='--')
+            
+            # Mark width peaks with 'x' markers
+            if z in all_width_peaks and all_width_peaks[z]:
+                for peak_val, peak_time in all_width_peaks[z]:
+                    ax.plot(peak_time, peak_val, 'x', color=color, markersize=8, markeredgewidth=2)
+            
+            # Mark depth peaks with 'x' markers
+            if z in all_depth_peaks and all_depth_peaks[z]:
+                for peak_val, peak_time in all_depth_peaks[z]:
+                    ax.plot(peak_time, peak_val, 'x', color=color, markersize=8, markeredgewidth=2)
+            
             if z == 10:
                 z10_t, z10_widths, z10_depths = t_list, width_list, depth_list
         # Add dashed max lines and labels for z=10 if present
@@ -237,6 +315,27 @@ def main():
         fig.tight_layout()
         fig.savefig("metrics.png", dpi=150)
         print(f"Wrote metrics.png.")
+        
+        # Print maximum values for all z-slices
+        print("\n=== PEAK VALUES SUMMARY ===")
+        print("Width Peaks:")
+        for z in sorted(all_width_peaks.keys()):
+            if all_width_peaks[z]:
+                print(f"  z={z/10000:.4f}:")
+                for i, (peak_width, time_at_peak) in enumerate(all_width_peaks[z], 1):
+                    print(f"    Peak {i}: Width = {peak_width:.6f} at time = {time_at_peak:.6f}")
+            else:
+                print(f"  z={z/10000:.4f}: No peaks detected")
+        
+        print("\nDepth Peaks:")
+        for z in sorted(all_depth_peaks.keys()):
+            if all_depth_peaks[z]:
+                print(f"  z={z/10000:.4f}:")
+                for i, (peak_depth, time_at_peak) in enumerate(all_depth_peaks[z], 1):
+                    print(f"    Peak {i}: Depth = {peak_depth:.6f} at time = {time_at_peak:.6f}")
+            else:
+                print(f"  z={z/10000:.4f}: No peaks detected")
+        print("==============================\n")
 
 if __name__ == "__main__":
     main()
