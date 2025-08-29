@@ -25,7 +25,7 @@ import argparse
 # ---- config ----
 BASE = Path("postProcessing/T_slice")
 T_THRESHOLD = 1571.15
-DEFAULT_ZLIST = [5, 10, 15, 20]
+DEFAULT_ZLIST = [5]
 # ---------------
 
 # VTK (legacy .vtk PolyData)
@@ -83,7 +83,7 @@ def main():
                        key=lambda p: float(p.name))
 
     # Limit to first 800 time directories for faster processing while getting more peaks
-    time_dirs = time_dirs[:800]
+    time_dirs = time_dirs[:4000]
 
     print(f"Found {len(time_dirs)} time directories to process (limited to first 800)")
     print(f"Processing Z-slices: {zlist}")
@@ -106,17 +106,17 @@ def main():
         SLICE_FILE = f"planeZ{zstr}.vtk"
         print(f"\nProcessing Z-slice {z} (z={z/10000:.4f})...")
         slice_processed = 0
-        
+
         for tdir in time_dirs:
             vtk_path = tdir / SLICE_FILE
             if not vtk_path.exists():
                 processed_files += 1
                 continue
-            
+
             # Progress indicator
             slice_processed += 1
             processed_files += 1
-            
+
             # Show progress every 50 files or at the beginning
             if processed_files % 50 == 0 or processed_files == 1:
                 elapsed_time = time.time() - start_time
@@ -128,7 +128,7 @@ def main():
                           f"Elapsed: {elapsed_time:.1f}s, Est. remaining: {remaining_time:.1f}s")
                 else:
                     print(f"  Progress: {processed_files}/{total_files} ({progress_percent:.1f}%) - Starting...")
-            
+
             try:
                 pts, T = load_points_and_T(vtk_path)
             except Exception as e:
@@ -201,21 +201,21 @@ def main():
         fig, ax = plt.subplots(figsize=(10, 6))
         # Keep lists for z=10 to annotate max later
         z10_t, z10_widths, z10_depths = None, None, None
-        
+
         def find_peaks(values, times, min_prominence=None, min_time_separation=0.001):
             """Find local maxima (peaks) in the data with optional minimum prominence and time separation."""
             if len(values) < 3:
                 return []
-            
+
             # Convert to numpy arrays for easier processing
             vals = np.array(values)
             ts = np.array(times)
-            
+
             # If no prominence specified, use 5% of the data range as minimum prominence
             if min_prominence is None:
                 data_range = vals.max() - vals.min()
                 min_prominence = 0.05 * data_range
-            
+
             peaks = []
             for i in range(1, len(vals) - 1):
                 # Check if this point is a local maximum
@@ -224,17 +224,17 @@ def main():
                     left_min = vals[:i+1].min()
                     right_min = vals[i:].min()
                     prominence = vals[i] - max(left_min, right_min)
-                    
+
                     if prominence >= min_prominence:
                         peaks.append((vals[i], ts[i]))
-            
+
             # Filter peaks that are too close in time, keeping the larger one
             if not peaks:
                 return []
-                
+
             # Sort peaks by time
             peaks.sort(key=lambda x: x[1])
-            
+
             filtered_peaks = []
             for value, time in peaks:
                 # Check if this peak is too close to any already accepted peak
@@ -246,15 +246,15 @@ def main():
                         if value > prev_value:
                             filtered_peaks[i] = (value, time)
                         break
-                
+
                 # If not too close to any existing peak, add it
                 if not too_close:
                     filtered_peaks.append((value, time))
-            
+
             # Sort by time again and return
             filtered_peaks.sort(key=lambda x: x[1])
             return filtered_peaks
-        
+
         for z in zvals:
             print(f"  Processing peaks for z={z/10000:.4f}...")
             z_points = sorted([(t, bp) for zz, t, bp in all_boundary_points if zz == z], key=lambda x: x[0])
@@ -265,46 +265,46 @@ def main():
             max_y_list = [float(bp[:,1].max()) for _, bp in z_points]
             width_list = [mx - mn for mn, mx in zip(min_x_list, max_x_list)]
             depth_list = [max_y - max(mn_y, 0.0) for mn_y, max_y in zip(min_y_list, max_y_list)]
-            
+
             # Find peaks in width and depth
             if width_list and len(width_list) >= 3:
                 width_peaks = find_peaks(width_list, t_list)
                 all_width_peaks[z] = width_peaks
                 print(f"    Found {len(width_peaks)} width peaks")
-            
+
             if depth_list and len(depth_list) >= 3:
                 depth_peaks = find_peaks(depth_list, t_list)
                 all_depth_peaks[z] = depth_peaks
                 print(f"    Found {len(depth_peaks)} depth peaks")
-            
+
             color = z_to_color[z]
             ax.plot(t_list, width_list, label=f"Width z={z/10000:.4f}", color=color, linestyle='-')
             ax.plot(t_list, depth_list, label=f"Depth z={z/10000:.4f}", color=color, linestyle='--')
-            
+
             # Mark width peaks with 'x' markers
             if z in all_width_peaks and all_width_peaks[z]:
                 for peak_val, peak_time in all_width_peaks[z]:
                     ax.plot(peak_time, peak_val, 'x', color=color, markersize=8, markeredgewidth=2)
-            
+
             # Mark depth peaks with 'x' markers
             if z in all_depth_peaks and all_depth_peaks[z]:
                 for peak_val, peak_time in all_depth_peaks[z]:
                     ax.plot(peak_time, peak_val, 'x', color=color, markersize=8, markeredgewidth=2)
-            
+
             if z == 10:
                 z10_t, z10_widths, z10_depths = t_list, width_list, depth_list
-        
+
         # Calculate overlap depth for each z-slice
         def calculate_overlap_depth(z_slice, depth_peak_times, all_boundary_data):
             """Calculate overlap depth by finding geometric intersections between consecutive melted area boundaries"""
             from scipy.spatial.distance import cdist
-            
+
             overlap_depths = []
-            
+
             # Get boundary points for this z-slice at depth peak times
             z_boundary_data = [(t, bp) for zz, t, bp in all_boundary_data if zz == z_slice]
             z_boundary_dict = {t: bp for t, bp in z_boundary_data}
-            
+
             # Find boundary data closest to each peak time
             peak_boundaries = []
             for peak_val, peak_time in depth_peak_times:
@@ -320,66 +320,66 @@ def main():
                         # If filtering removes too many points, use original boundary
                         print(f"    Warning: filtering removed too many points, using full boundary")
                         peak_boundaries.append((peak_time, peak_val, boundary_points))
-            
+
             # Find intersections between consecutive boundaries
             for i in range(1, len(peak_boundaries)):
                 prev_time, prev_peak, prev_bp = peak_boundaries[i-1]
                 curr_time, curr_peak, curr_bp = peak_boundaries[i]
-                
+
                 # Find intersection points between the two boundary curves (not point clouds)
                 intersection_depths = []
-                
+
                 print(f"    Analyzing intersection between boundary curves at t={prev_time:.6f} and t={curr_time:.6f}")
                 print(f"    Previous boundary: {len(prev_bp)} points, Current boundary: {len(curr_bp)} points")
-                
+
                 # Create boundary curves using convex hulls and find their intersection
                 if len(prev_bp) >= 3 and len(curr_bp) >= 3:
                     try:
                         from scipy.spatial import ConvexHull
-                        
+
                         # Create convex hulls for both boundaries
                         prev_hull = ConvexHull(prev_bp[:, :2])
                         curr_hull = ConvexHull(curr_bp[:, :2])
-                        
+
                         prev_hull_points = prev_bp[prev_hull.vertices]
                         curr_hull_points = curr_bp[curr_hull.vertices]
-                        
+
                         # Create ordered boundary lines from hull vertices
                         prev_boundary_lines = []
                         curr_boundary_lines = []
-                        
+
                         # Create line segments for previous boundary
                         for i in range(len(prev_hull_points)):
                             p1 = prev_hull_points[i]
                             p2 = prev_hull_points[(i + 1) % len(prev_hull_points)]
                             prev_boundary_lines.append((p1[:2], p2[:2]))
-                        
-                        # Create line segments for current boundary  
+
+                        # Create line segments for current boundary
                         for i in range(len(curr_hull_points)):
                             p1 = curr_hull_points[i]
                             p2 = curr_hull_points[(i + 1) % len(curr_hull_points)]
                             curr_boundary_lines.append((p1[:2], p2[:2]))
-                        
+
                         # Find intersections between line segments
                         def line_intersection(line1, line2):
                             """Find intersection point between two line segments"""
                             (x1, y1), (x2, y2) = line1
                             (x3, y3), (x4, y4) = line2
-                            
+
                             denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
                             if abs(denom) < 1e-10:  # Lines are parallel
                                 return None
-                            
+
                             t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
                             u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
-                            
+
                             # Check if intersection is within both line segments
                             if 0 <= t <= 1 and 0 <= u <= 1:
                                 x = x1 + t * (x2 - x1)
                                 y = y1 + t * (y2 - y1)
                                 return (x, y)
                             return None
-                        
+
                         # Find all line-to-line intersections
                         intersections = []
                         for prev_line in prev_boundary_lines:
@@ -391,7 +391,7 @@ def main():
                                     depth = abs(y)
                                     intersections.append((x, y, depth))
                                     print(f"    Line intersection found at x={x:.6f}, y={y:.6f}, depth={depth:.6f}")
-                        
+
                         # If we found intersections, use them
                         if intersections:
                             # Sort by depth and take the deepest intersection as the main one
@@ -401,34 +401,34 @@ def main():
                             print(f"    Using deepest intersection at depth: {deepest_intersection[2]:.6f}")
                         else:
                             print(f"    No line intersections found between boundary curves")
-                    
+
                     except Exception as e:
                         print(f"    Error in boundary curve intersection: {e}")
-                
+
                 # Fallback: If no line intersections found, try closest approach method
                 if len(intersection_depths) == 0:
                     print("    Trying closest approach method as fallback...")
-                    
+
                     # Find the single closest pair of points between boundaries
                     if len(prev_bp) > 0 and len(curr_bp) > 0:
                         from scipy.spatial.distance import cdist
                         distances = cdist(curr_bp[:, :2], prev_bp[:, :2])
-                        
+
                         # Find the single closest pair
                         min_dist_idx = np.unravel_index(distances.argmin(), distances.shape)
                         curr_idx, prev_idx = min_dist_idx
-                        
+
                         min_distance = distances[curr_idx, prev_idx]
                         if min_distance < 50e-6:  # Within 50 micrometers
                             curr_point = curr_bp[curr_idx]
                             prev_point = prev_bp[prev_idx]
-                            
+
                             intersection_depth = (abs(curr_point[1]) + abs(prev_point[1])) / 2
                             intersection_depths.append(intersection_depth)
                             print(f"    Closest approach intersection at depth: {intersection_depth:.6f} (distance: {min_distance*1e6:.1f} μm)")
-                
+
                 print(f"    Total intersection depths found: {len(intersection_depths)}")
-                
+
                 # Alternative method: Find actual line intersections using convex hulls
                 if len(intersection_depths) == 0:
                     try:
@@ -438,13 +438,13 @@ def main():
                     except Exception:
                         # Any error with geometric intersection, continue with distance-based method
                         pass
-                
+
                 # If we found intersection depths, record them
                 if intersection_depths:
                     # Use the maximum intersection depth (deepest overlap)
                     max_overlap_depth = max(intersection_depths)
                     avg_overlap_depth = np.mean(intersection_depths)
-                    
+
                     overlap_depths.append({
                         'prev_time': prev_time,
                         'curr_time': curr_time,
@@ -454,9 +454,9 @@ def main():
                         'prev_depth_range': (float(prev_bp[:,1].min()), float(prev_bp[:,1].max())),
                         'curr_depth_range': (float(curr_bp[:,1].min()), float(curr_bp[:,1].max()))
                     })
-            
+
             return overlap_depths
-        
+
         # Calculate overlap depths for all z-slices
         all_overlap_depths = {}
         print("\n" + "=" * 50)
@@ -473,45 +473,45 @@ def main():
             else:
                 print(f"  [{i}/{len(zvals)}] No depth peaks for z={z/10000:.4f} - skipping overlap calculation")
         print("Overlap calculation complete.")
-        
+
         # Now generate the boundaries plot with the detected peaks and overlaps
         print("\n" + "=" * 50)
         print(f"Creating boundaries plot for z={boundaries_z/10000:.4f}")
-        
+
         # Check if we have depth peaks for this z-slice
         if boundaries_z in all_depth_peaks and all_depth_peaks[boundaries_z]:
             from scipy.spatial import ConvexHull
-            
+
             # Filter to requested z slice and sort by time
             z_points = sorted([(t, bp) for zz, t, bp in all_boundary_points if zz == boundaries_z], key=lambda x: x[0])
-            
+
             peak_times = [peak_time for _, peak_time in all_depth_peaks[boundaries_z]]
             peak_boundary_data = []
-            
+
             print(f"Depth peak times: {[f'{t:.6f}' for t in peak_times]}")
-            
+
             # Find boundary data closest to each peak time
             for peak_time in peak_times:
                 closest_data = min(z_points, key=lambda x: abs(x[0] - peak_time))
                 if abs(closest_data[0] - peak_time) < 0.0001:  # Within tolerance
                     peak_boundary_data.append((peak_time, closest_data[1]))
                     print(f"  Found boundary data for peak time {peak_time:.6f} (closest: {closest_data[0]:.6f})")
-            
+
             if peak_boundary_data:
                 # Create the plot
                 fig2, ax2 = plt.subplots(figsize=(12, 10))
-                
+
                 # Use different colors for each peak
                 colors = plt.cm.tab10(np.linspace(0, 1, len(peak_boundary_data)))
-                
+
                 # Plot each melted area at peak times
                 for i, (peak_time, bp) in enumerate(peak_boundary_data):
                     color = colors[i % len(colors)]
-                    
+
                     # Plot boundary points
-                    ax2.plot(bp[:, 0], -bp[:, 1], '.', color=color, alpha=0.7, markersize=4, 
+                    ax2.plot(bp[:, 0], -bp[:, 1], '.', color=color, alpha=0.7, markersize=4,
                            label=f'Peak {i+1} (t={peak_time:.6f})')
-                    
+
                     # Plot convex hull outline
                     if len(bp) >= 3:
                         try:
@@ -521,16 +521,16 @@ def main():
                             ax2.plot(hull_pts[:, 0], -hull_pts[:, 1], '-', color=color, alpha=0.8, linewidth=2.5)
                         except:
                             pass
-                
+
                 # Add intersection visualization if we have overlap data
                 if boundaries_z in all_overlap_depths and all_overlap_depths[boundaries_z]:
                     overlaps = all_overlap_depths[boundaries_z]
                     print(f"Adding intersection visualization for {len(overlaps)} intersections...")
-                    
+
                     for i, overlap_info in enumerate(overlaps):
                         prev_time = overlap_info['prev_time']
                         curr_time = overlap_info['curr_time']
-                        
+
                         # Find the corresponding boundary data
                         prev_bp = None
                         curr_bp = None
@@ -539,55 +539,55 @@ def main():
                                 prev_bp = bp
                             if abs(peak_time - curr_time) < 0.0001:
                                 curr_bp = bp
-                        
+
                         if prev_bp is not None and curr_bp is not None:
                             # Recalculate single intersection point for visualization
                             intersection_point = None
-                            
+
                             # Use the same boundary curve intersection method
                             if len(prev_bp) >= 3 and len(curr_bp) >= 3:
                                 try:
                                     from scipy.spatial import ConvexHull
-                                    
+
                                     # Create convex hulls for both boundaries
                                     prev_hull = ConvexHull(prev_bp[:, :2])
                                     curr_hull = ConvexHull(curr_bp[:, :2])
-                                    
+
                                     prev_hull_points = prev_bp[prev_hull.vertices]
                                     curr_hull_points = curr_bp[curr_hull.vertices]
-                                    
+
                                     # Create boundary lines
                                     prev_boundary_lines = []
                                     curr_boundary_lines = []
-                                    
+
                                     for j in range(len(prev_hull_points)):
                                         p1 = prev_hull_points[j]
                                         p2 = prev_hull_points[(j + 1) % len(prev_hull_points)]
                                         prev_boundary_lines.append((p1[:2], p2[:2]))
-                                    
+
                                     for j in range(len(curr_hull_points)):
                                         p1 = curr_hull_points[j]
                                         p2 = curr_hull_points[(j + 1) % len(curr_hull_points)]
                                         curr_boundary_lines.append((p1[:2], p2[:2]))
-                                    
+
                                     # Line intersection function
                                     def line_intersection(line1, line2):
                                         (x1, y1), (x2, y2) = line1
                                         (x3, y3), (x4, y4) = line2
-                                        
+
                                         denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
                                         if abs(denom) < 1e-10:
                                             return None
-                                        
+
                                         t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
                                         u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
-                                        
+
                                         if 0 <= t <= 1 and 0 <= u <= 1:
                                             x = x1 + t * (x2 - x1)
                                             y = y1 + t * (y2 - y1)
                                             return (x, y)
                                         return None
-                                    
+
                                     # Find the deepest intersection
                                     intersections = []
                                     for prev_line in prev_boundary_lines:
@@ -596,59 +596,59 @@ def main():
                                             if intersection is not None:
                                                 x, y = intersection
                                                 intersections.append((x, y, abs(y)))
-                                    
+
                                     if intersections:
                                         # Use the deepest intersection
                                         intersections.sort(key=lambda x: x[2], reverse=True)
                                         intersection_point = intersections[0][:2]  # (x, y)
-                                
+
                                 except Exception:
                                     pass
-                            
+
                             # Fallback to closest approach if no line intersection found
                             if intersection_point is None:
                                 from scipy.spatial.distance import cdist
                                 distances = cdist(curr_bp[:, :2], prev_bp[:, :2])
                                 min_dist_idx = np.unravel_index(distances.argmin(), distances.shape)
                                 curr_idx, prev_idx = min_dist_idx
-                                
+
                                 if distances[curr_idx, prev_idx] < 50e-6:
                                     curr_point = curr_bp[curr_idx]
                                     prev_point = prev_bp[prev_idx]
                                     intersection_x = (curr_point[0] + prev_point[0]) / 2
                                     intersection_y = (curr_point[1] + prev_point[1]) / 2
                                     intersection_point = (intersection_x, intersection_y)
-                            
+
                             # Plot single intersection point
                             if intersection_point is not None:
                                 x, y = intersection_point
                                 ax2.plot(x, -y, 'x', color='red', markersize=15, markeredgewidth=4,
                                         label=f'Intersection {i+1}' if i == 0 else "",
                                         alpha=0.9)
-                                
+
                                 # Add text annotation using the actual intersection depth
                                 actual_intersection_depth = abs(y)  # Use the actual y-coordinate of the intersection
-                                ax2.annotate(f'Depth: {actual_intersection_depth:.6f}', 
-                                           xy=(x, -y), 
+                                ax2.annotate(f'Depth: {actual_intersection_depth:.6f}',
+                                           xy=(x, -y),
                                            xytext=(15, 15), textcoords='offset points',
                                            fontsize=10, fontweight='bold', color='red',
-                                           bbox=dict(boxstyle='round,pad=0.4', facecolor='white', 
+                                           bbox=dict(boxstyle='round,pad=0.4', facecolor='white',
                                                    edgecolor='red', alpha=0.9),
                                            arrowprops=dict(arrowstyle='->', color='red', lw=1.5))
-                
+
                 ax2.set_xlabel("x (m)")
                 ax2.set_ylabel("-y (m)")
                 ax2.set_title(f"Melted areas at depth peak times with overlaps (z = {boundaries_z/10000:.4f} m, T ≥ {T_THRESHOLD} K)")
                 ax2.grid(True, alpha=0.3)
                 ax2.set_aspect('equal', adjustable='box')
-                
+
                 # Create legend
                 handles, labels = ax2.get_legend_handles_labels()
                 if len(handles) > 8:  # Too many for inline legend
                     ax2.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
                 else:
                     ax2.legend(loc='best', fontsize=8)
-                
+
                 fig2.tight_layout()
                 fig2.savefig("boundaries.png", dpi=150, bbox_inches='tight')
                 print(f"Wrote boundaries.png showing {len(peak_boundary_data)} melted areas at depth peak times with overlap visualization.")
@@ -658,7 +658,7 @@ def main():
             print(f"No depth peaks found for z={boundaries_z}. Cannot create boundaries plot.")
             # Create empty plot with message
             fig2, ax2 = plt.subplots(figsize=(8, 6))
-            ax2.text(0.5, 0.5, f'No depth peaks found for z={boundaries_z/10000:.4f}', 
+            ax2.text(0.5, 0.5, f'No depth peaks found for z={boundaries_z/10000:.4f}',
                    ha='center', va='center', transform=ax2.transAxes, fontsize=14)
             ax2.set_title(f"No melted areas at depth peaks (z = {boundaries_z/10000:.4f})")
             fig2.savefig("boundaries.png", dpi=150)
@@ -693,7 +693,7 @@ def main():
         fig.tight_layout()
         fig.savefig("metrics.png", dpi=150)
         print(f"Wrote metrics.png.")
-        
+
         # Print maximum values for all z-slices
         print("\n=== PEAK VALUES SUMMARY ===")
         print("Width Peaks:")
@@ -704,7 +704,7 @@ def main():
                     print(f"    Peak {i}: Width = {peak_width:.6f} at time = {time_at_peak:.6f}")
             else:
                 print(f"  z={z/10000:.4f}: No peaks detected")
-        
+
         print("\nDepth Peaks:")
         for z in sorted(all_depth_peaks.keys()):
             if all_depth_peaks[z]:
@@ -713,7 +713,7 @@ def main():
                     print(f"    Peak {i}: Depth = {peak_depth:.6f} at time = {time_at_peak:.6f}")
             else:
                 print(f"  z={z/10000:.4f}: No peaks detected")
-        
+
         print("\nOverlap Depths (Geometric Intersections):")
         if all_overlap_depths:
             total_overlaps = sum(len(overlaps) for overlaps in all_overlap_depths.values())
@@ -732,36 +732,67 @@ def main():
                     print(f"      Current melt depth range:  ({overlap_info['curr_depth_range'][0]:.6f}, {overlap_info['curr_depth_range'][1]:.6f})")
         else:
             print("  No intersection depths calculated")
-        
-        # Calculate and display averages
+
+        # Calculate and display averages, and write peaks and means to a CSV
         print("\n=== AVERAGE VALUES SUMMARY ===")
-        
-        # Calculate averages for each z-slice
-        for z in sorted(all_width_peaks.keys()):
-            if all_width_peaks[z] and all_depth_peaks[z]:
-                # Extract peak values
-                width_values = [peak[0] for peak in all_width_peaks[z]]  # peak[0] is the width value
-                depth_values = [peak[0] for peak in all_depth_peaks[z]]  # peak[0] is the depth value
-                
-                # Calculate averages
-                avg_width = np.mean(width_values) * 1e6  # Convert to micrometers
-                avg_depth = np.mean(depth_values) * 1e6  # Convert to micrometers
-                
-                print(f"z={z/10000:.4f}:")
-                print(f"  Avg. Width (μm): {avg_width:.3f}")
-                print(f"  Avg. Depth (μm): {avg_depth:.3f}")
-                
-                # Calculate average overlap depth if available
-                if z in all_overlap_depths and all_overlap_depths[z]:
-                    overlap_values = [overlap['overlap_depth'] for overlap in all_overlap_depths[z]]
-                    avg_overlap_depth = np.mean(overlap_values) * 1e6  # Convert to micrometers
-                    print(f"  Avg. Overlap Depth (μm): {avg_overlap_depth:.3f}")
+
+        # Output file for peaks and means
+        PEAKS_MEANS_CSV = "meltpool_peaks_and_means.csv"
+        with open(PEAKS_MEANS_CSV, "w", newline="") as fcsv:
+            writer = csv.writer(fcsv)
+            writer.writerow(["depth (um)", "width (um)", "overlapDepth (um)"])
+
+            for z in sorted(all_width_peaks.keys()):
+                if all_width_peaks[z] and all_depth_peaks[z]:
+                    # Extract peak values
+                    width_values = [peak[0] for peak in all_width_peaks[z]]
+                    depth_values = [peak[0] for peak in all_depth_peaks[z]]
+                    # Overlap depths (may be missing)
+                    if z in all_overlap_depths and all_overlap_depths[z]:
+                        overlap_values = [overlap['overlap_depth'] for overlap in all_overlap_depths[z]]
+                    else:
+                        overlap_values = []
+
+                    # Pad to required length
+                    def pad_list(lst, target_len):
+                        if not lst:
+                            return [0.0] * target_len
+                        if len(lst) >= target_len:
+                            return lst[:target_len]
+                        return lst + [lst[-1]] * (target_len - len(lst))
+
+                    width_padded = pad_list(width_values, 45)
+                    depth_padded = pad_list(depth_values, 45)
+                    overlap_padded = pad_list(overlap_values, 44)
+
+                    # Write all rows (up to max length), converting to micrometers
+
+                    for i in range(45):
+                        d = depth_padded[i] * 1e6 if i < len(depth_padded) else ""
+                        w = width_padded[i] * 1e6 if i < len(width_padded) else ""
+                        o = overlap_padded[i] * 1e6 if i < 44 else ""
+                        # Format to 3 decimal places if value is not empty
+                        d_str = f"{d:.3f}" if d != "" else ""
+                        w_str = f"{w:.3f}" if w != "" else ""
+                        o_str = f"{o:.3f}" if o != "" else ""
+                        writer.writerow([d_str, w_str, o_str])
+
+                    # Calculate means (over padded lists, in micrometers)
+                    mean_depth = np.mean(depth_padded) * 1e6
+                    mean_width = np.mean(width_padded) * 1e6
+                    mean_overlap = np.mean(overlap_padded) * 1e6
+
+                    # Write mean row
+                    writer.writerow(["mean: {:.3f}".format(mean_depth), "mean: {:.3f}".format(mean_width), "mean: {:.3f}".format(mean_overlap)])
+
+                    # Print summary
+                    print(f"z={z/10000:.4f}:")
+                    print(f"  Avg. Width: {mean_width:.3f} μm")
+                    print(f"  Avg. Depth: {mean_depth:.3f} μm")
+                    print(f"  Avg. Overlap Depth: {mean_overlap:.3f} μm")
                     print(f"  Number of peaks: Width={len(width_values)}, Depth={len(depth_values)}, Overlaps={len(overlap_values)}")
-                else:
-                    print(f"  Avg. Overlap Depth (μm): No overlaps detected")
-                    print(f"  Number of peaks: Width={len(width_values)}, Depth={len(depth_values)}, Overlaps=0")
-                print()
-        
+                    print()
+        print(f"Wrote {PEAKS_MEANS_CSV} with padded peaks and means (all in μm).")
         print("==============================\n")
 
 if __name__ == "__main__":
