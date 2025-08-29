@@ -732,6 +732,36 @@ def main():
                     print(f"      Current melt depth range:  ({overlap_info['curr_depth_range'][0]:.6f}, {overlap_info['curr_depth_range'][1]:.6f})")
         else:
             print("  No intersection depths calculated")
+        
+        # Calculate and display averages
+        print("\n=== AVERAGE VALUES SUMMARY ===")
+        
+        # Calculate averages for each z-slice
+        for z in sorted(all_width_peaks.keys()):
+            if all_width_peaks[z] and all_depth_peaks[z]:
+                # Extract peak values
+                width_values = [peak[0] for peak in all_width_peaks[z]]  # peak[0] is the width value
+                depth_values = [peak[0] for peak in all_depth_peaks[z]]  # peak[0] is the depth value
+                
+                # Calculate averages
+                avg_width = np.mean(width_values) * 1e6  # Convert to micrometers
+                avg_depth = np.mean(depth_values) * 1e6  # Convert to micrometers
+                
+                print(f"z={z/10000:.4f}:")
+                print(f"  Avg. Width (μm): {avg_width:.3f}")
+                print(f"  Avg. Depth (μm): {avg_depth:.3f}")
+                
+                # Calculate average overlap depth if available
+                if z in all_overlap_depths and all_overlap_depths[z]:
+                    overlap_values = [overlap['overlap_depth'] for overlap in all_overlap_depths[z]]
+                    avg_overlap_depth = np.mean(overlap_values) * 1e6  # Convert to micrometers
+                    print(f"  Avg. Overlap Depth (μm): {avg_overlap_depth:.3f}")
+                    print(f"  Number of peaks: Width={len(width_values)}, Depth={len(depth_values)}, Overlaps={len(overlap_values)}")
+                else:
+                    print(f"  Avg. Overlap Depth (μm): No overlaps detected")
+                    print(f"  Number of peaks: Width={len(width_values)}, Depth={len(depth_values)}, Overlaps=0")
+                print()
+        
         print("==============================\n")
 
 if __name__ == "__main__":
