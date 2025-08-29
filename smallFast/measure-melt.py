@@ -626,9 +626,9 @@ def main():
                                         label=f'Intersection {i+1}' if i == 0 else "",
                                         alpha=0.9)
                                 
-                                # Add text annotation
-                                overlap_depth = overlap_info['overlap_depth']
-                                ax2.annotate(f'Depth: {overlap_depth:.4f}', 
+                                # Add text annotation using the actual intersection depth
+                                actual_intersection_depth = abs(y)  # Use the actual y-coordinate of the intersection
+                                ax2.annotate(f'Depth: {actual_intersection_depth:.6f}', 
                                            xy=(x, -y), 
                                            xytext=(15, 15), textcoords='offset points',
                                            fontsize=10, fontweight='bold', color='red',
