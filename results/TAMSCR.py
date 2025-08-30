@@ -36,9 +36,9 @@ BASE_DIR = "/media/data2/August/amb25/smallFast/postProcessing/T_slice"  # folde
 VTK_FILENAME = "planeY0.vtk"                                             # VTK file name inside each time folder
 THRESHOLD_TEMP = 1533.15                                                 # K (solidus threshold used throughout)
 TARGET_COOL_TEMP = 1423.15                                               # K (SCR target)
-UNDEFINED_FILL = 0                                                       # value to use in contours when undefined
+UNDEFINED_FILL = np.nan                                                  # value to use in contours when undefine0lh
 N_PIXELS_FOR_TIMESERIES = 5                                              # how many pixels to plot in the time-series
-MAX_TIME_STEPS = 400                                                     # limit for loading (evenly sampled across range)
+MAX_TIME_STEPS = 100000                                                     # limit for loading (evenly sampled across range)
 RESULTS_DIR = "/media/data2/August/amb25/results"                        # outputs folder
 # ------------------------------------------------------
 
@@ -591,28 +591,41 @@ def main():
     print("Computing SCR for all pixels...")
     tam_end_arr, dt_to_target, scr = analyzer.compute_scr_for_all_pixels(THRESHOLD_TEMP, TARGET_COOL_TEMP)
 
-    # --- Save single CSV: include ALL pixels with TAM > 0; SCR may be NaN ---
-    print("Writing combined CSV (TAM>0 only; SCR may be NaN)...")
+    # --- Save single CSV: include ALL pixels (TAM and SCR for every pixel; NaN for undefined) ---
+    print("Writing complete TAM, SCR CSV (all pixels; NaN for undefined values)...")
     with open(COMBINED_CSV, "w", newline="") as f:
         w = csv.writer(f)
-        # Column order per request: TAM value, then TAM_end (also SCR start), then SCR (or NaN)
         w.writerow(["pixel_index", "x", "y", "z", "TAM_seconds", "TAM_end_time_s", "SCR_K_per_s"])
         for i, (xyz, tam_i, end_i, scr_i) in enumerate(zip(analyzer.coordinates, tam, tam_end, scr)):
-            if not (tam_i > 0):
-                continue  # only rows with a TAM
-            # end_i is NaN only if tam_i <= 0 (filtered out), so write float(end_i)
             w.writerow([
-                i, float(xyz[0]), float(xyz[1]), float(xyz[2]),
-                float(tam_i),
+                i,
+                float(xyz[0]),
+                float(xyz[1]),
+                float(xyz[2]),
+                float(tam_i) if np.isfinite(tam_i) else np.nan,
                 float(end_i) if np.isfinite(end_i) else np.nan,
                 float(scr_i) if np.isfinite(scr_i) else np.nan
             ])
     print(f"Saved: {COMBINED_CSV}")
 
+    # --- Save sorted CSV by TAM_end_time (only valid, only [tam_end_time, tam, scr]) ---
+    SORTED_CSV = os.path.join(RESULTS_DIR, "tam_scr_sorted_by_endtime.csv")
+    print("Writing sorted TAM, SCR CSV (only valid rows, columns: tam_end_time, tam, scr)...")
+    rows = []
+    for tam_i, end_i, scr_i in zip(tam, tam_end, scr):
+        if np.isfinite(tam_i) and np.isfinite(end_i) and np.isfinite(scr_i):
+            rows.append([float(end_i), float(tam_i), float(scr_i)])
+    rows.sort(key=lambda r: r[0])  # sort by tam_end_time
+    with open(SORTED_CSV, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["tam_end_time", "tam", "scr"])
+        w.writerows(rows)
+    print(f"Saved: {SORTED_CSV}")
+
     # --- Print summary statistics for TAM and SCR ---
     # Only consider valid (TAM > 0) and valid SCR (finite, >0, <= max_scr)
     valid_tam = tam[tam > 0]
-    valid_scr = scr[(~np.isnan(scr)) & (scr > 0) & (scr <= 1e7)]
+    valid_scr = scr[(~np.isnan(scr)) & (scr > 0) & (scr <= 3e6)]
     print("\nSummary statistics:")
     print(f"{'N-datapoints':>12}\t{'TAM Mean':>10}\t{'TAM Median':>10}\t{'TAM Std. Dev.':>12}\t{'N-datapoints':>12}\t{'SCR Mean':>10}\t{'SCR Median':>10}\t{'SCR Std. Dev.':>12}")
     print(f"{len(valid_tam):12d}\t{np.mean(valid_tam):10.4f}\t{np.median(valid_tam):10.4f}\t{np.std(valid_tam):12.4f}\t{len(valid_scr):12d}\t{np.mean(valid_scr):10.4f}\t{np.median(valid_scr):10.4f}\t{np.std(valid_scr):12.4f}")
@@ -625,7 +638,7 @@ def main():
     print(f"Saved: {TAM_CONTOUR_PNG}")
 
     print("Creating SCR point plot (undefined -> -1e-6, squares, values > max_scr hidden)...")
-    fig_scr = analyzer.create_scr_point_plot(scr, max_scr=1e7)
+    fig_scr = analyzer.create_scr_point_plot(scr, max_scr=3e6)
     plt.savefig(SCR_CONTOUR_PNG, dpi=300, bbox_inches='tight')
     plt.close(fig_scr)
     print(f"Saved: {SCR_CONTOUR_PNG}")
